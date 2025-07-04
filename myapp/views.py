@@ -106,24 +106,6 @@ def category_delete(request):
     except CategoryName.DoesNotExist:
         return Response({"error": "Category not found"}, status=404)
 
-# Product Create
-# @permission_classes([IsAdminUser])
-# @api_view(['POST'])
-# def product_create(request):
-#     serializer = ProductSerializer(data = request.data)
-#     if serializer.is_valid():
-#         serializer.save()
-#         return Response({"message": "Product added", "product": serializer.data},status=201)
-#     return Response({"message": "Failed", "error": serializer.errors}, status=400)
-
-# # Product Get
-# @permission_classes([IsAdminUser])
-# @api_view(['GET'])
-# def product_detail_get(request):
-#     data = Product.objects.all()
-#     serializer = ProductSerializer(data, many=True)
-#     return Response({"message": "Product Fatched", "data": serializer.data}, status=200)
-
 #Product Create
 @permission_classes([IsAdminUser])
 @api_view(['POST'])
