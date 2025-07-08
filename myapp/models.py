@@ -4,7 +4,7 @@ class BuyerRegistration(models.Model):
     buyer_id = models.AutoField(primary_key=True)
     buyer_name = models.CharField(max_length=50)
     buyer_email = models.EmailField(max_length=50, unique=True)
-    buyer_image = models.ImageField(upload_to='buyers/',)
+    buyer_image = models.ImageField(upload_to='buyers/',null = True)
     buyer_ph_number = models.CharField(max_length=15)
     buyer_address = models.TextField(max_length=300,blank=True, null=True)
     buyer_password = models.CharField(max_length=8)
@@ -83,20 +83,20 @@ class Order(models.Model):
     order_id = models.AutoField(primary_key=True)
     buyer = models.ForeignKey(BuyerRegistration, on_delete=models.CASCADE)
     total_amount = models.FloatField()
-    razorpay_order_id = models.CharField(max_length=100, blank=True, null=True)
-    razorpay_payment_id = models.CharField(max_length=100, blank=True, null=True)
-    razorpay_signature = models.CharField(max_length=100, blank=True, null=True)
+    # razorpay_order_id = models.CharField(max_length=100, blank=True, null=True)
+    # razorpay_payment_id = models.CharField(max_length=100, blank=True, null=True)
+    # razorpay_signature = models.CharField(max_length=100, blank=True, null=True)
     status = models.CharField(max_length=50, default='Pending')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Order #{self.order_id} by {self.buyer.buyer_name}"
+        return f"Order {self.order_id} by {self.buyer.buyer_name}"
 
 class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
-    price = models.FloatField()  # snapshot of product price at order time
+    price = models.FloatField()
 
     def __str__(self):
         return f"{self.product.product_name} ({self.quantity})"

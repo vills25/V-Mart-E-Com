@@ -12,7 +12,7 @@ from rest_framework.filters import SearchFilter
 from django.db.models import Q
 from rest_framework.generics import ListAPIView
 from django.conf import settings
-import razorpay
+# import razorpay
 
 # ----------------------------------
 # Pagination
@@ -36,12 +36,13 @@ def register_view(request):
 @permission_classes([AllowAny])
 @api_view(['POST'])
 def login_view(request):
-    buyer_email = request.data.get("email")
-    password = request.data.get("password")
-    buyer = authenticate(buyer_email=buyer_email, password=password)
+    buyer_email = request.data.get("buyer_email")
+    buyer_password = request.data.get("buyer_password")
+    buyer = authenticate(username =buyer_email, password= buyer_password )
 
     if buyer:
         refresh = RefreshToken.for_user(buyer)
+        
         return Response({
             "refresh": str(refresh),
             "access": str(refresh.access_token),
@@ -96,6 +97,7 @@ def buyer_delete(request):
     except BuyerRegistration.DoesNotExist:
         return Response({"error": "Buyer not found"}, status=404)
 
+#Now Not Working
 # Reset Password
 @permission_classes([IsAuthenticated])
 @api_view(['POST']) 
@@ -127,8 +129,8 @@ def category_create(request):
     serializer = CategoryNameSerializer(data = request.data)
     if serializer.is_valid():
         serializer.save()
-        return Response({"Message": "Category Created"}, status=201)
-    return Response(serializer.error_messages)
+        return Response({"Message": "Category Created", "category": serializer.data}, status=201)
+    return Response({"message": "Failed", "error": serializer.errors}, status=400)
 
 #catagory get
 @permission_classes([IsAdminUser, IsAuthenticated])
@@ -136,7 +138,7 @@ def category_create(request):
 def category_view(request):
     data = CategoryName.objects.all()
     serializer = CategoryNameSerializer(data)
-    return Response({"Message": "Data Fatched", "Data": serializer.data})
+    return Response({"Message": "Data Fatched", "Category": serializer.data})
 
 # Category Update
 @permission_classes([IsAdminUser])
@@ -145,7 +147,7 @@ def category_update(request):
     serializer = CategoryNameSerializer(CategoryName, data=request.data, partial=True)
     if serializer.is_valid():
         serializer.save()
-        return Response({"message": "Category updated", "data": serializer.data}, status=200)
+        return Response({"message": "Category updated", "Updated Category": serializer.data}, status=200)
     return Response({"message": "Failed", "error": serializer.errors}, status=400)
 
 # Category Delete
@@ -331,7 +333,7 @@ def cart_items_create(request):
     serializer = CartItemsSerializer(data = request.data)
     if serializer.is_valid():
         serializer.save()
-        return Response({"message": "Cart Items added", "cart items": serializer.data}, status=201)
+        return Response({"message": "Cart Items added in cart", "cart items": serializer.data}, status=201)
     return Response({"message": "Failed", "error": serializer.errors}, status=400)
 
 # Cart Items Update & Delete
@@ -400,23 +402,24 @@ def checkout_view(request):
         qty = item.quantity
         total_amount += price * qty
         items.append({ "product": item.product_id.product_name, "price": price,"qty": qty, "subtotal": price * qty})
+        print('-------------->>>>>',items)
+        # return Response(items)
+    # # Razorpay integration (mock keys)
+    # client = razorpay.Client(auth=("YOUR_RAZORPAY_KEY_ID", "YOUR_RAZORPAY_SECRET_KEY"))
 
-    # Razorpay integration (mock keys)
-    client = razorpay.Client(auth=("YOUR_RAZORPAY_KEY_ID", "YOUR_RAZORPAY_SECRET_KEY"))
+    # data = {
+    #     "amount": int(total_amount * 100),  # convert to paise
+    #     "currency": "INR",
+    #     "receipt": "receipt#1",
+    #     "payment_capture": 1
+    # }
 
-    data = {
-        "amount": int(total_amount * 100),  # convert to paise
-        "currency": "INR",
-        "receipt": "receipt#1",
-        "payment_capture": 1
-    }
+    # payment = client.order.create(data=data)
 
-    payment = client.order.create(data=data)
-
-    return Response({
-        "message": "Checkout Success",
-        "items": items,
-        "total_amount": total_amount,
-        "razorpay_order": payment
-    }, status=200)
+    # return Response({
+    #     "message": "Checkout Success",
+    #     "items": items,
+    #     "total_amount": total_amount,
+    #     "razorpay_order": payment
+    # }, status=200)
 

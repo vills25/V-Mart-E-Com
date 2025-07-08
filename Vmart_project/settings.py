@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
 ]
 
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -55,9 +56,9 @@ REST_FRAMEWORK = {
 
     }
 
-# settings.py
-RAZORPAY_KEY_ID = 'YOUR_KEY'
-RAZORPAY_SECRET_KEY = 'YOUR_SECRET'
+# # settings.py
+# RAZORPAY_KEY_ID = 'YOUR_KEY'
+# RAZORPAY_SECRET_KEY = 'YOUR_SECRET'
 
 from datetime import timedelta
 

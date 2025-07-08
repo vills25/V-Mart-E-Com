@@ -4,7 +4,7 @@ from .views import *
 urlpatterns = [
     path('register/',register_view ),
     path('login/', login_view),
-    path('buyerprofileview',buyer_profile_view ),
+    path('buyerprofileview/',buyer_profile_view ),
     path('buyerupdate/', buyer_update),
     path('buyerdelete/',buyer_delete ),
     path('passwordreset/',reset_password_view ),
@@ -29,7 +29,7 @@ urlpatterns = [
     path('cartitemsupdate/', cart_items_update_delete),
     path('cartitemsdelete/', cart_items_update_delete),
     path('cancelorder/', cancel_order),
-    path('getallorders', grt_all_orders_view),
+    path('getallorders/', grt_all_orders_view),
     path('checkout/', checkout_view)
 
 ]
