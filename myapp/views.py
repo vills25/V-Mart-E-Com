@@ -20,8 +20,8 @@ class StandardResultsSetPagination(PageNumberPagination):
     max_page_size = 100
 
 # Register Buyer View
-@permission_classes([AllowAny])
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def register_view(request):
     serializer = UserSerializer(data = request.data)
     if serializer.is_valid():
@@ -98,16 +98,16 @@ def logout_view(request):
 # ----------------------------------------------------------------------
 
 # Fatch buyer Profile
-@permission_classes([IsAuthenticated])
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def buyer_profile_view(request):
     data = CustomUser.objects.all()
     serializer = UserSerializer(data, many=True)
     return Response({"message": "buyer Profile Fatched", "data": serializer.data}, status=200)
 
 # Update Buyer Profile
-@permission_classes([IsAuthenticated])
 @api_view(['PUT','PATCH'])
+@permission_classes([IsAuthenticated])
 def buyer_update(request):
     serializer = UserSerializer(CustomUser,data=request.data, partial=True )
     if serializer.is_valid():
@@ -116,8 +116,8 @@ def buyer_update(request):
     return Response({"message": "Failed", "error": serializer.errors}, status=400)
 
 # Delete Account/Profile View
-@permission_classes([IsAuthenticated])
 @api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
 def buyer_delete(request):
     buyer_id = request.data.get('id')
     if not buyer_id:
@@ -129,16 +129,16 @@ def buyer_delete(request):
     except CustomUser.DoesNotExist:
         return Response({"error": "Buyer not found"}, status=404)
 
-#Now Not Working
+# Now Not Working
 # Reset Password
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
-@api_view(['POST']) 
 def     reset_password_view(request):
     buyer_email = request.data.get("email")
     if not buyer_email:
         return Response({"error": "Enter Email please"}, status=400) 
     try:
-        buyer = CustomUser.objects.get(buyer_email=buyer_email)
+        buyer = CustomUser.objects.get(email=buyer_email)
     except CustomUser.DoesNotExist:
         return Response({"error": "Buyer not found"}, status=404)
 
@@ -161,8 +161,8 @@ class CategoryListView(ListAPIView):
     search_fields = ['category_name']
 
 # category Create
-@permission_classes([IsAdminUser])
 @api_view(['POST'])
+@permission_classes([IsAdminUser])
 def category_create(request):
     serializer = CategoryNameSerializer(data = request.data)
     if serializer.is_valid():
@@ -171,16 +171,16 @@ def category_create(request):
     return Response({"message": "Failed", "error": serializer.errors}, status=400)
 
 #catagory get
-@permission_classes([AllowAny])
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def category_view(request):
     data = CategoryName.objects.all()
     serializer = CategoryNameSerializer(data, many = True)
     return Response({"Message": "Data Fatched", "Category": serializer.data})
 
 # Category Update
-@permission_classes([IsAdminUser])
 @api_view(['PUT'])
+@permission_classes([IsAdminUser])
 def category_update(request):
     serializer = CategoryNameSerializer(CategoryName, data=request.data, partial=True)
     if serializer.is_valid():
@@ -189,8 +189,8 @@ def category_update(request):
     return Response({"message": "Failed", "error": serializer.errors}, status=400)
 
 # Category Delete
-@permission_classes([IsAdminUser])
 @api_view(['DELETE'])
+@permission_classes([IsAdminUser])
 def category_delete(request):
     category_id = request.data.get("id")
     if not category_id:
@@ -215,8 +215,8 @@ class SubCategoryListView(ListAPIView):
     search_fields = ['sub_category_name']
 
 # Subcategory Create
-@permission_classes([IsAdminUser])
 @api_view(['POST'])
+@permission_classes([IsAdminUser])
 def subcategory_create(request):
     serializer = SubcategorySerializer(data = request.data)
     if serializer.is_valid():
@@ -226,16 +226,16 @@ def subcategory_create(request):
         return Response({"Error": serializer.errors})
 
 # Subcategory GET
-@permission_classes([AllowAny])
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def subcategory_view(request):
     data = SubCategory.objects.all()
     serializer = SubcategorySerializer(data, many = True)
     return Response({"Message":"Fatched", "Data": serializer.data}, status = 200)
 
 # Sub category Update & Delete
-@permission_classes([IsAdminUser])
 @api_view(['PUT', 'DELETE'])
+@permission_classes([IsAdminUser])
 def subcategory_update_delete(request):
     get_subcategory_id = request.data.get('id')
     
@@ -264,8 +264,8 @@ class ProductListView(ListAPIView):
     search_fields = ['product_name', 'product_description']
 
 #Product Create 
-@permission_classes([IsAdminUser])
 @api_view(['POST'])
+@permission_classes([IsAdminUser])
 def product_create(request):
     serializer = ProductSerializer(data=request.data)
     if serializer.is_valid():
@@ -274,16 +274,16 @@ def product_create(request):
     return Response({"message": "Failed", "error": serializer.errors}, status=404)
 
 #Product GET
-@permission_classes([AllowAny])
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def product_get(request):
     data = Product.objects.all()
     serializer = ProductSerializer(data, many=True)
     return Response({"message": "Fatched", "data": serializer.data}, status=200)
 
 # Product update 
-@permission_classes([IsAdminUser])
 @api_view(['PUT'])
+@permission_classes([IsAdminUser])
 def product_update(request):
     product_id = request.data.get('id')
     serializer = ProductSerializer(Product, product_id, data=request.data, partial=True)
@@ -293,8 +293,8 @@ def product_update(request):
     return Response({"message": "Failed", "error": serializer.errors}, status=400)
 
 # Product Delete
-@permission_classes([IsAdminUser])
 @api_view(['DELETE'])
+@permission_classes([IsAdminUser])
 def product_delete(request):
     product_id = request.data.get('id')
     if not product_id:
@@ -309,8 +309,8 @@ def product_delete(request):
 # Cart CRUD
 
 # Cart Get
-@permission_classes([IsAuthenticated, IsAdminUser])
 @api_view(['GET'])
+@permission_classes([IsAuthenticated, IsAdminUser])
 def cart_get(request):
     cart_data = Cart.objects.all()
     print('--------------->>>>>>>>>>>>>>',cart_data)
@@ -318,8 +318,8 @@ def cart_get(request):
     return Response({"Message": " Cart Fatched", "Cart": serializer.data},status=200)
 
 # Cart Add
-@permission_classes([IsAdminUser, IsAuthenticated])
 @api_view(['POST'])
+@permission_classes([IsAdminUser, IsAuthenticated])
 def cart_create(request):
     serializer = CartSerializer(data = request.data)
     print('--------------->>>>>>>>>>>>>>',serializer)
@@ -329,8 +329,8 @@ def cart_create(request):
     return Response({"message": "Failed", "error": serializer.errors}, status=400)
 
 # Cart Update & Delete
-@permission_classes([IsAuthenticated,IsAdminUser])
 @api_view(['PUT', 'DELETE'])
+@permission_classes([IsAuthenticated,IsAdminUser])
 def cart_update_delete(request):
     cart_id = request.data.get('id')
 
@@ -359,16 +359,16 @@ class CartItemsListView(ListAPIView):
     search_fields = ['product_id__product_name']
 
 #Cart Items Get
-@permission_classes([IsAuthenticated, IsAdminUser])
 @api_view(['GET'])
+@permission_classes([IsAuthenticated, IsAdminUser])
 def cart_items_get(request):
     cart_items_data = CartItems.objects.all()
     serializer = CartItemsSerializer(cart_items_data, many = True)
     return Response({"Message":"Fatched success", "Cart Items": serializer.data}, status=200)
 
 # Cart items Create
-@permission_classes([IsAuthenticated, IsAdminUser])
 @api_view(['POST'])
+@permission_classes([IsAuthenticated, IsAdminUser])
 def cart_items_create(request):
     serializer = CartItemsSerializer(data = request.data)
     if serializer.is_valid():
@@ -377,8 +377,8 @@ def cart_items_create(request):
     return Response({"message": "Failed", "error": serializer.errors}, status=400)
 
 # Cart Items Update & Delete
-@permission_classes([IsAuthenticated,IsAdminUser])
 @api_view(['PUT', 'DELETE'])
+@permission_classes([IsAuthenticated,IsAdminUser])
 def cart_items_update_delete(request):
     cart_items_id = request.data.get('id')
 
@@ -397,8 +397,8 @@ def cart_items_update_delete(request):
 #--------------------------------------------------------------------------
 
 # Cancel Order view
-@permission_classes([IsAuthenticated])
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def cancel_order(request):
     order_id = request.data.get('order_id')
     try:
@@ -414,8 +414,8 @@ def cancel_order(request):
 #--------------------------------------------------------------------------
 
 # get all buyer's(User's) orders
-@permission_classes([IsAdminUser])
 @api_view(['GET'])
+@permission_classes([IsAdminUser])
 def grt_all_orders_view(request):
     data = Order.objects.all()
     serializer = OrderSerializer(data, many=True)
