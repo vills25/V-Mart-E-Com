@@ -70,8 +70,11 @@ class Product(models.Model):
 
 class Cart(models.Model):
     cart_id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    buyer = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.buyer.username
 
 class CartItems(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)  

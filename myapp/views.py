@@ -313,6 +313,7 @@ def product_delete(request):
 @api_view(['GET'])
 def cart_get(request):
     cart_data = Cart.objects.all()
+    print('--------------->>>>>>>>>>>>>>',cart_data)
     serializer = CartSerializer(cart_data, many = True)
     return Response({"Message": " Cart Fatched", "Cart": serializer.data},status=200)
 
@@ -321,6 +322,7 @@ def cart_get(request):
 @api_view(['POST'])
 def cart_create(request):
     serializer = CartSerializer(data = request.data)
+    print('--------------->>>>>>>>>>>>>>',serializer)
     if serializer.is_valid():
         serializer.save()
         return Response({"message": "Cart added", "data": serializer.data}, status=201)
