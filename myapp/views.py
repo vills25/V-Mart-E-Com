@@ -427,7 +427,12 @@ def grt_all_orders_view(request):
 @permission_classes([IsAuthenticated])
 def checkout_view(request):
     buyer = request.user
-    cart_items = CartItems.objects.filter(cart_id__buyer_cart_id=buyer)
+    try:
+        cart = Cart.objects.get(buyer=buyer)
+    except Cart.DoesNotExist:
+        return Response({"error": "Cart not found"}, status=404)
+
+    cart_items = CartItems.objects.filter(cart = cart)
     if not cart_items.exists():
         return Response({"error": "Cart is empty"}, status=400)
 
