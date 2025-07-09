@@ -77,9 +77,10 @@ class Cart(models.Model):
         return self.buyer.username
 
 class CartItems(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)  
+    product_id = models.ForeignKey(Product, on_delete=models.CASCADE)  
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE)  
     quantity = models.PositiveIntegerField(default=1)
+    
 
 class Order(models.Model):
     order_id = models.AutoField(primary_key=True)

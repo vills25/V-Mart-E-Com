@@ -42,16 +42,16 @@ class CartSerializer(serializers.ModelSerializer):
         fields = ['cart_id', 'buyer', 'created_at']
 
 class CartItemsSerializer (serializers.ModelSerializer):
-    product_name = serializers.CharField(source='product.product_name')
+    product_name = serializers.CharField(source='product.product_name', read_only = True)
     class Meta:
         model = CartItems
-        fields = ['id', 'product', 'product_name', 'cart', 'quantity']       
+        fields = ['id', 'product_id', 'product_name', 'cart', 'quantity']       
 
 class OrderSerializer (serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = '__all__'
-        
+
 class OrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.product_name')
     class Meta:

@@ -431,7 +431,7 @@ def checkout_view(request):
     if not cart_items.exists():
         return Response({"error": "Cart is empty"}, status=400)
 
-    total_amount = sum(item.product.product_price * item.quantity for item in cart_items)
+    total_amount = sum(item.product_id.product_price * item.quantity for item in cart_items)
     
     # Create Order
     order = Order.objects.create(
@@ -444,9 +444,9 @@ def checkout_view(request):
     for item in cart_items:
         OrderItem.objects.create(
             order=order,
-            product=item.product,
+            product=item.product_id,
             quantity=item.quantity,
-            price=item.product.product_price
+            price=item.product_id.product_price
         )
     
     # Clear cart
