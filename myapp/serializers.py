@@ -1,15 +1,22 @@
 from rest_framework import serializers
-from .models import BuyerRegistration, CategoryName,SubCategory , Product, Cart, CartItems, OrderItem, Order
+from .models import CustomUser, CategoryName,SubCategory , Product, Cart, CartItems, OrderItem, Order
 
-class BuyerRegistrationSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = BuyerRegistration
-        fields = '__all__'
+        model = CustomUser
+        fields = ['id', 'username', 'email','password', 'ph_number', 'address', 'image']
 
-# class SellerRegistrationSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = SellerRegistration
-#         fields = '__all__'
+    def create(self, validated_data):
+        user = CustomUser.objects.create_user(
+            username=validated_data['username'],
+            password=validated_data['password'],
+            email=validated_data.get('email', ''))
+        return user
+
+class RegisterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ['username', 'email', 'password']
 
 class CategoryNameSerializer(serializers.ModelSerializer):
     class Meta:
@@ -17,11 +24,14 @@ class CategoryNameSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class SubcategorySerializer(serializers.ModelSerializer):
+    category_name = serializers.CharField(source='category.category_name', read_only=True)
     class Meta:
         model = SubCategory
-        fields = '__all__'
+        fields = ['sub_category_id', 'sub_category_name', 'category', 'category_name']
 
 class ProductSerializer(serializers.ModelSerializer):
+    product_category_name = serializers.CharField(source='product_category.category_name')
+    product_subcategory_name = serializers.CharField(source='product_subcategory.sub_category_name')
     class Meta:
         model = Product
         fields = '__all__' 
@@ -29,12 +39,13 @@ class ProductSerializer(serializers.ModelSerializer):
 class CartSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cart
-        fields = '__all__'
+        fields = ['cart_id', 'user', 'created_at']
 
 class CartItemsSerializer (serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product.product_name')
     class Meta:
         model = CartItems
-        fields = '__all__'       
+        fields = ['id', 'product', 'product_name', 'cart', 'quantity']       
 
 class OrderSerializer (serializers.ModelSerializer):
     class Meta:
@@ -42,7 +53,8 @@ class OrderSerializer (serializers.ModelSerializer):
         fields = '__all__'
         
 class OrderItemSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product.product_name')
     class Meta:
         model = OrderItem
-        fields = '__all__'
+        fields = ['id', 'product', 'product_name', 'quantity', 'price']
 

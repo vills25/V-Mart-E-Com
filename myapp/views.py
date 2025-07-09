@@ -1,7 +1,7 @@
 # Create your views here.
 
-from .models import BuyerRegistration, Cart, CartItems, Product, CategoryName, SubCategory,Order, OrderItem
-from .serializers import BuyerRegistrationSerializer,CategoryNameSerializer,SubcategorySerializer,ProductSerializer,CartSerializer, CartItemsSerializer, OrderItemSerializer, OrderSerializer
+from .models import CustomUser, Cart, CartItems, Product, CategoryName, SubCategory,Order, OrderItem
+from .serializers import UserSerializer,CategoryNameSerializer,SubcategorySerializer,ProductSerializer,CartSerializer, CartItemsSerializer, OrderItemSerializer, OrderSerializer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
@@ -11,8 +11,6 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.filters import SearchFilter
 from django.db.models import Q
 from rest_framework.generics import ListAPIView
-from django.conf import settings
-# import razorpay
 
 # ----------------------------------
 # Pagination
@@ -25,31 +23,65 @@ class StandardResultsSetPagination(PageNumberPagination):
 @permission_classes([AllowAny])
 @api_view(['POST'])
 def register_view(request):
-    serializer = BuyerRegistrationSerializer(data = request.data)
+    serializer = UserSerializer(data = request.data)
     if serializer.is_valid():
         serializer.save()
         return Response({"message": "Buyer registeration successfull", "Buyer": serializer.data},status=201)
     return Response({"message": "Failed", "error": serializer.errors}, status=400)
 
 
-#Login Buyer View
-@permission_classes([AllowAny])
-@api_view(['POST'])
-def login_view(request):
-    buyer_email = request.data.get("buyer_email")
-    buyer_password = request.data.get("buyer_password")
-    buyer = authenticate(username =buyer_email, password= buyer_password )
+# #Login Buyer View
+# @permission_classes([AllowAny])
+# @api_view(['POST'])
+# def login_view(request):
+#     buyer_email = request.data.get("buyer_email")
+#     print('-------------------->>>>>>>>>>>>>>>>>>>>>>>',buyer_email)
+#     password = request.data.get("buyer_password")
+#     print('-------------------->>>>>>>>>>>>>>>>>>>>>>>', password)
+#     buyer = authenticate(username = buyer_email, password= password )
+    
+#     if buyer:
+#         refresh = RefreshToken.for_user(buyer)
+#         print('--------------------------')
+#         return Response({
+#             "refresh": str(refresh),
+#             "access": str(refresh.access_token),
+#             "user": BuyerRegistrationSerializer(buyer).data
+#         }, status=200)
+#     else:
+#         return Response({"error": "Invalid login details"}, status=401)
 
-    if buyer:
-        refresh = RefreshToken.for_user(buyer)
-        
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def login_view(request):
+    username = request.data.get('username')
+    password = request.data.get('password')
+ 
+    print('----------->>>>>>>>>>>',username, password)
+    
+    user = authenticate(username=username, password=password)
+    
+    if user is None:
+        try:
+            user = CustomUser.objects.get(username=username)
+            print('------------->>>>>>>>>>>>',user)
+
+            if user.check_password(password):
+                user = authenticate(username=username, password=password)
+            else:
+                return Response({"error": "Invalid password"}, status=401)
+        except CustomUser.DoesNotExist:
+            return Response({"error": "Username not found"}, status=404)
+    
+    if user:
+        refresh = RefreshToken.for_user(user)
         return Response({
             "refresh": str(refresh),
             "access": str(refresh.access_token),
-            "user": BuyerRegistrationSerializer(buyer).data
-        }, status=200)
-    else:
-        return Response({"error": "Invalid login details"}, status=401)
+            "user": UserSerializer(user).data
+        })
+    return Response({"error": "Authentication failed"}, status=401)
 
 # Log-out view
 @api_view(['POST'])
@@ -69,15 +101,15 @@ def logout_view(request):
 @permission_classes([IsAuthenticated])
 @api_view(['GET'])
 def buyer_profile_view(request):
-    data = BuyerRegistration.objects.all()
-    serializer = BuyerRegistrationSerializer(data, many=True)
+    data = CustomUser.objects.all()
+    serializer = UserSerializer(data, many=True)
     return Response({"message": "buyer Profile Fatched", "data": serializer.data}, status=200)
 
 # Update Buyer Profile
 @permission_classes([IsAuthenticated])
-@api_view(['PUT'])
+@api_view(['PUT','PATCH'])
 def buyer_update(request):
-    serializer = BuyerRegistrationSerializer(BuyerRegistration,data=request.data, partial=True )
+    serializer = UserSerializer(CustomUser,data=request.data, partial=True )
     if serializer.is_valid():
         serializer.save()
         return Response({"message": "Buyer updated", "data": serializer.data}, status=200)
@@ -91,10 +123,10 @@ def buyer_delete(request):
     if not buyer_id:
         return Response({"error": "enter buyer id please"}, status=400)
     try:
-        buyer = BuyerRegistration.objects.get(id=buyer_id)
+        buyer = CustomUser.objects.get(id=buyer_id)
         buyer.delete()
         return Response({"message": "Buyer deleted"}, status=200)
-    except BuyerRegistration.DoesNotExist:
+    except CustomUser.DoesNotExist:
         return Response({"error": "Buyer not found"}, status=404)
 
 #Now Not Working
@@ -106,9 +138,15 @@ def     reset_password_view(request):
     if not buyer_email:
         return Response({"error": "Enter Email please"}, status=400) 
     try:
-        buyer = BuyerRegistration.objects.get(buyer_email=buyer_email)
-    except BuyerRegistration.DoesNotExist:
+        buyer = CustomUser.objects.get(buyer_email=buyer_email)
+    except CustomUser.DoesNotExist:
         return Response({"error": "Buyer not found"}, status=404)
+
+#python django shell...    
+# from myapp.models import CustomUser
+# user = CustomUser.objects.get(username="testuser")
+# user.set_password("new_password")
+# user.save()    
 
 # ----------------------------------------------------------------------
 # Category CRUD
@@ -133,11 +171,11 @@ def category_create(request):
     return Response({"message": "Failed", "error": serializer.errors}, status=400)
 
 #catagory get
-@permission_classes([IsAdminUser, IsAuthenticated])
+@permission_classes([AllowAny])
 @api_view(['GET'])
 def category_view(request):
     data = CategoryName.objects.all()
-    serializer = CategoryNameSerializer(data)
+    serializer = CategoryNameSerializer(data, many = True)
     return Response({"Message": "Data Fatched", "Category": serializer.data})
 
 # Category Update
@@ -188,7 +226,7 @@ def subcategory_create(request):
         return Response({"Error": serializer.errors})
 
 # Subcategory GET
-@permission_classes([IsAuthenticated, IsAdminUser])
+@permission_classes([AllowAny])
 @api_view(['GET'])
 def subcategory_view(request):
     data = SubCategory.objects.all()
@@ -199,17 +237,17 @@ def subcategory_view(request):
 @permission_classes([IsAdminUser])
 @api_view(['PUT', 'DELETE'])
 def subcategory_update_delete(request):
-    subcategory_id = request.data.get('id')
+    get_subcategory_id = request.data.get('id')
     
     if request.method == 'PUT':
-        serializer = SubcategorySerializer(SubCategory, subcategory_id, data = request.data, partial = True)
+        serializer = SubcategorySerializer(SubCategory, get_subcategory_id, data = request.data, partial = True)
         if serializer.is_valid:
             serializer.save()
-            return Response({"Message": "Sub category added", "Data": serializer.data}, status=201)
+            return Response({"Message": "Sub category updated", "Data": serializer.data}, status=201)
         return Response({"Message" : "failde", "error": serializer.errors}, status=400)
     
     elif request.method == 'DELETE':
-        subcategory = SubCategory.objects.get(id = subcategory_id)
+        subcategory = SubCategory.objects.get(id = get_subcategory_id)
         subcategory.delete()
         return Response({"Message": "Deleted success"}, status=200)
 
@@ -236,7 +274,7 @@ def product_create(request):
     return Response({"message": "Failed", "error": serializer.errors}, status=404)
 
 #Product GET
-@permission_classes([IsAdminUser, IsAuthenticated])
+@permission_classes([AllowAny])
 @api_view(['GET'])
 def product_get(request):
     data = Product.objects.all()
@@ -383,43 +421,32 @@ def grt_all_orders_view(request):
 
 #--------------------------------------------------------------------------
 
-# Checkout view
-@permission_classes([IsAuthenticated])
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def checkout_view(request):
     buyer = request.user
-    try:
-        cart = Cart.objects.get(buyer_cart_id=buyer)
-    except Cart.DoesNotExist:
-        return Response({"error": "Cart not found"}, status=404)
+    cart_items = CartItems.objects.filter(cart_id__buyer_cart_id=buyer)
+    if not cart_items.exists():
+        return Response({"error": "Cart is empty"}, status=400)
 
-    cart_items = CartItems.objects.filter(cart_id=cart)
-    total_amount = 0
-    items = []
-
+    total_amount = sum(item.product.product_price * item.quantity for item in cart_items)
+    
+    # Create Order
+    order = Order.objects.create(
+        buyer=buyer,
+        total_amount=total_amount,
+        status='Pending'
+    )
+    
+    # Create OrderItems
     for item in cart_items:
-        price = item.product_id.product_price
-        qty = item.quantity
-        total_amount += price * qty
-        items.append({ "product": item.product_id.product_name, "price": price,"qty": qty, "subtotal": price * qty})
-        print('-------------->>>>>',items)
-        # return Response(items)
-    # # Razorpay integration (mock keys)
-    # client = razorpay.Client(auth=("YOUR_RAZORPAY_KEY_ID", "YOUR_RAZORPAY_SECRET_KEY"))
-
-    # data = {
-    #     "amount": int(total_amount * 100),  # convert to paise
-    #     "currency": "INR",
-    #     "receipt": "receipt#1",
-    #     "payment_capture": 1
-    # }
-
-    # payment = client.order.create(data=data)
-
-    # return Response({
-    #     "message": "Checkout Success",
-    #     "items": items,
-    #     "total_amount": total_amount,
-    #     "razorpay_order": payment
-    # }, status=200)
-
+        OrderItem.objects.create(
+            order=order,
+            product=item.product,
+            quantity=item.quantity,
+            price=item.product.product_price
+        )
+    
+    # Clear cart
+    cart_items.delete()
+    return Response({"message": "Order created!", "total_amount": total_amount})

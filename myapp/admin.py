@@ -1,8 +1,8 @@
 from django.contrib import admin
-from .models import BuyerRegistration, CategoryName,SubCategory , Product, Cart, CartItems,Order,OrderItem
+from .models import CustomUser, CategoryName,SubCategory , Product, Cart, CartItems,Order,OrderItem
 # Register your models here.
 
-admin.site.register(BuyerRegistration)
+admin.site.register(CustomUser)
 # admin.site.register(SellerRegistration)
 admin.site.register(CategoryName)
 admin.site.register(SubCategory)
