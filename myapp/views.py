@@ -14,8 +14,8 @@ from django.db.models import Q
 # ----------------------------------
 # Pagination
 class StandardResultsSetPagination(PageNumberPagination):
-    page_size = 3
-    max_page_size = 100
+    page_size = 5
+    page_size_query_param = 'page_size'
 
 # Register Buyer View
 @api_view(['POST'])
@@ -67,7 +67,7 @@ def logout_view(request):
 # ----------------------------------------------------------------------
 
 # Search Buyer & Pagination
-@api_view(['POST','GET'])
+@api_view(['POST'])
 def search_buyer(request):
     search_query = request.data.get('username', '')
     buyer = CustomUser.objects.filter(Q(username__icontains=search_query))
@@ -132,7 +132,7 @@ def reset_password_view(request):
 # Category CRUD
 
 # Pegination
-@api_view(['POST','GET'])
+@api_view(['POST'])
 def search_category(request):
     search_query = request.data.get('category_name', '')
     category = CategoryName.objects.filter(Q(category_name__icontains=search_query)| Q(category_id__icontains=search_query) ) 
@@ -188,7 +188,7 @@ def category_delete(request):
 # Subcategory CRUD
 
 # Pagination
-@api_view(['POST','GET'])
+@api_view(['POST'])
 def search_subcategory(request):
     search_query = request.data.get('sub_category_name', '')
     subcategory = SubCategory.objects.filter(Q(sub_category_name__icontains=search_query))
@@ -202,7 +202,7 @@ def search_subcategory(request):
 @api_view(['POST'])
 @permission_classes([IsAdminUser])
 def subcategory_create(request):
-    serializer = SubcategorySerializer(data = request.data)
+    serializer = SubcategorySerializer(data = request.data, many= True)
     if serializer.is_valid():
         serializer.save()
         return Response({"Message":"Created success", "data":serializer.data}, status=201)
@@ -224,7 +224,7 @@ def subcategory_update_delete(request):
     get_subcategory_id = request.data.get('id')
     
     if request.method == 'PUT':
-        serializer = SubcategorySerializer(SubCategory, get_subcategory_id, data = request.data, partial = True)
+        serializer = SubcategorySerializer(SubCategory, data = request.data, partial = True)
         if serializer.is_valid:
             serializer.save()
             return Response({"Message": "Sub category updated", "Data": serializer.data}, status=201)
@@ -241,7 +241,7 @@ def subcategory_update_delete(request):
 # Product Search & Pegination
 @api_view(['POST'])
 def search_product(request):
-    search_query = request.data.get('product_name', 'product_description','')
+    search_query = request.data.get('product_name','')
     products = Product.objects.filter(
         Q(product_name__icontains=search_query) |
         Q(product_description__icontains=search_query))    
@@ -249,14 +249,14 @@ def search_product(request):
     paginator = StandardResultsSetPagination()
     result_page = paginator.paginate_queryset(products, request)
     serializer = ProductSerializer(result_page, many=True)
-    
+
     return paginator.get_paginated_response(serializer.data)    
 
 #Product Create 
 @api_view(['POST'])
 @permission_classes([IsAdminUser])
 def product_create(request):
-    serializer = ProductSerializer(data=request.data)
+    serializer = ProductSerializer(data=request.data, many = True)
     if serializer.is_valid():
         serializer.save()
         return Response({"message": "Product Created", "data": serializer.data}, status=201)
@@ -338,7 +338,7 @@ def cart_update_delete(request):
 # Cartitems
 
 # Cart Items Search & Paginations
-@api_view(['POST', 'GET'])
+@api_view(['POST'])
 def search_cart_items(request):
     search_query = request.data.get('product_name', 'product_id', '')
     cart_items = CartItems.objects.filter(

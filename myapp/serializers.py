@@ -30,8 +30,8 @@ class SubcategorySerializer(serializers.ModelSerializer):
         fields = ['sub_category_id', 'sub_category_name', 'category', 'category_name']
 
 class ProductSerializer(serializers.ModelSerializer):
-    product_category_name = serializers.CharField(source='product_category.category_name')
-    product_subcategory_name = serializers.CharField(source='product_subcategory.sub_category_name')
+    product_category_name = serializers.CharField(source='product_category.category_name',read_only = True)
+    product_subcategory_name = serializers.CharField(source='product_subcategory.sub_category_name', read_only = True)
     class Meta:
         model = Product
         fields = '__all__' 
@@ -53,7 +53,7 @@ class OrderSerializer (serializers.ModelSerializer):
         fields = '__all__'
 
 class OrderItemSerializer(serializers.ModelSerializer):
-    product_name = serializers.CharField(source='product.product_name')
+    product_name = serializers.CharField(source='product.product_name',read_only = True)
     class Meta:
         model = OrderItem
         fields = ['id', 'product', 'product_name', 'quantity', 'price']
