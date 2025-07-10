@@ -8,15 +8,13 @@ from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.filters import SearchFilter
 from django.db.models import Q
-from rest_framework.generics import ListAPIView
+
 
 # ----------------------------------
 # Pagination
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 3
-    page_size_query_param = 'page_size'
     max_page_size = 100
 
 # Register Buyer View
@@ -29,44 +27,16 @@ def register_view(request):
         return Response({"message": "Buyer registeration successfull", "Buyer": serializer.data},status=201)
     return Response({"message": "Failed", "error": serializer.errors}, status=400)
 
-
-# #Login Buyer View
-# @permission_classes([AllowAny])
-# @api_view(['POST'])
-# def login_view(request):
-#     buyer_email = request.data.get("buyer_email")
-#     print('-------------------->>>>>>>>>>>>>>>>>>>>>>>',buyer_email)
-#     password = request.data.get("buyer_password")
-#     print('-------------------->>>>>>>>>>>>>>>>>>>>>>>', password)
-#     buyer = authenticate(username = buyer_email, password= password )
-    
-#     if buyer:
-#         refresh = RefreshToken.for_user(buyer)
-#         print('--------------------------')
-#         return Response({
-#             "refresh": str(refresh),
-#             "access": str(refresh.access_token),
-#             "user": BuyerRegistrationSerializer(buyer).data
-#         }, status=200)
-#     else:
-#         return Response({"error": "Invalid login details"}, status=401)
-
-
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
     username = request.data.get('username')
     password = request.data.get('password')
- 
-    print('----------->>>>>>>>>>>',username, password)
-    
     user = authenticate(username=username, password=password)
     
     if user is None:
         try:
             user = CustomUser.objects.get(username=username)
-            print('------------->>>>>>>>>>>>',user)
-
             if user.check_password(password):
                 user = authenticate(username=username, password=password)
             else:
@@ -79,8 +49,7 @@ def login_view(request):
         return Response({
             "refresh": str(refresh),
             "access": str(refresh.access_token),
-            "user": UserSerializer(user).data
-        })
+            "user": UserSerializer(user).data })
     return Response({"error": "Authentication failed"}, status=401)
 
 # Log-out view
@@ -97,6 +66,17 @@ def logout_view(request):
     
 # ----------------------------------------------------------------------
 
+# Search Buyer & Pagination
+@api_view(['POST','GET'])
+def search_buyer(request):
+    search_query = request.data.get('username', '')
+    buyer = CustomUser.objects.filter(Q(username__icontains=search_query))
+    paginator = StandardResultsSetPagination()
+    result_page = paginator.paginate_queryset(buyer, request)
+    serializer = UserSerializer(result_page, many=True)
+    
+    return paginator.get_paginated_response(serializer.data)
+
 # Fatch buyer Profile
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -109,7 +89,7 @@ def buyer_profile_view(request):
 @api_view(['PUT','PATCH'])
 @permission_classes([IsAuthenticated])
 def buyer_update(request):
-    serializer = UserSerializer(CustomUser,data=request.data, partial=True )
+    serializer = UserSerializer(CustomUser,data=request.data, partial = True)
     if serializer.is_valid():
         serializer.save()
         return Response({"message": "Buyer updated", "data": serializer.data}, status=200)
@@ -133,7 +113,7 @@ def buyer_delete(request):
 # Reset Password
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def     reset_password_view(request):
+def reset_password_view(request):
     buyer_email = request.data.get("email")
     if not buyer_email:
         return Response({"error": "Enter Email please"}, status=400) 
@@ -152,13 +132,15 @@ def     reset_password_view(request):
 # Category CRUD
 
 # Pegination
-class CategoryListView(ListAPIView):
-    queryset = CategoryName.objects.all()
-    serializer_class = CategoryNameSerializer
-    permission_classes = [IsAuthenticated]
-    pagination_class = StandardResultsSetPagination
-    filter_backends = [SearchFilter]
-    search_fields = ['category_name']
+@api_view(['POST','GET'])
+def search_category(request):
+    search_query = request.data.get('category_name', '')
+    category = CategoryName.objects.filter(Q(category_name__icontains=search_query)| Q(category_id__icontains=search_query) ) 
+    paginator = StandardResultsSetPagination()
+    result_page = paginator.paginate_queryset(category, request)
+    serializer = CategoryNameSerializer(result_page, many=True)
+  
+    return paginator.get_paginated_response(serializer.data)     
 
 # category Create
 @api_view(['POST'])
@@ -206,13 +188,15 @@ def category_delete(request):
 # Subcategory CRUD
 
 # Pagination
-class SubCategoryListView(ListAPIView):
-    queryset = SubCategory.objects.all()
-    serializer_class = SubcategorySerializer
-    permission_classes = [IsAuthenticated]
-    pagination_class = StandardResultsSetPagination
-    filter_backends = [SearchFilter]
-    search_fields = ['sub_category_name']
+@api_view(['POST','GET'])
+def search_subcategory(request):
+    search_query = request.data.get('sub_category_name', '')
+    subcategory = SubCategory.objects.filter(Q(sub_category_name__icontains=search_query))
+    paginator = StandardResultsSetPagination()
+    result_page = paginator.paginate_queryset(subcategory, request)
+    serializer = SubcategorySerializer(result_page, many=True)
+    
+    return paginator.get_paginated_response(serializer.data)      
 
 # Subcategory Create
 @api_view(['POST'])
@@ -254,14 +238,19 @@ def subcategory_update_delete(request):
 # ----------------------------------------------------------------------
 # Product CRUD
 
-# Pagination
-class ProductListView(ListAPIView):
-    queryset = Product.objects.all()
-    serializer_class = ProductSerializer
-    permission_classes = [IsAuthenticated]
-    pagination_class = StandardResultsSetPagination
-    filter_backends = [SearchFilter]
-    search_fields = ['product_name', 'product_description']
+# Product Search & Pegination
+@api_view(['POST'])
+def search_product(request):
+    search_query = request.data.get('product_name', 'product_description','')
+    products = Product.objects.filter(
+        Q(product_name__icontains=search_query) |
+        Q(product_description__icontains=search_query))    
+     
+    paginator = StandardResultsSetPagination()
+    result_page = paginator.paginate_queryset(products, request)
+    serializer = ProductSerializer(result_page, many=True)
+    
+    return paginator.get_paginated_response(serializer.data)    
 
 #Product Create 
 @api_view(['POST'])
@@ -313,7 +302,6 @@ def product_delete(request):
 @permission_classes([IsAuthenticated, IsAdminUser])
 def cart_get(request):
     cart_data = Cart.objects.all()
-    print('--------------->>>>>>>>>>>>>>',cart_data)
     serializer = CartSerializer(cart_data, many = True)
     return Response({"Message": " Cart Fatched", "Cart": serializer.data},status=200)
 
@@ -322,7 +310,6 @@ def cart_get(request):
 @permission_classes([IsAdminUser, IsAuthenticated])
 def cart_create(request):
     serializer = CartSerializer(data = request.data)
-    print('--------------->>>>>>>>>>>>>>',serializer)
     if serializer.is_valid():
         serializer.save()
         return Response({"message": "Cart added", "data": serializer.data}, status=201)
@@ -350,13 +337,19 @@ def cart_update_delete(request):
 
 # Cartitems
 
-class CartItemsListView(ListAPIView):
-    queryset = CartItems.objects.all()
-    serializer_class = CartItemsSerializer
-    permission_classes = [IsAuthenticated]
-    pagination_class = StandardResultsSetPagination
-    filter_backends = [SearchFilter]
-    search_fields = ['product_id__product_name']
+# Cart Items Search & Paginations
+@api_view(['POST', 'GET'])
+def search_cart_items(request):
+    search_query = request.data.get('product_name', 'product_id', '')
+    cart_items = CartItems.objects.filter(
+        Q(product_name__icontains=search_query) |
+        Q(product_id__icontains=search_query))
+
+    paginator = StandardResultsSetPagination()
+    result_page = paginator.paginate_queryset(cart_items, request)
+    serializer = CartItemsSerializer(result_page, many=True)
+
+    return paginator.get_paginated_response(serializer.data)
 
 #Cart Items Get
 @api_view(['GET'])
@@ -413,7 +406,7 @@ def cancel_order(request):
 
 #--------------------------------------------------------------------------
 
-# get all buyer's(User's) orders
+# get all orders
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
 def grt_all_orders_view(request):
@@ -442,8 +435,7 @@ def checkout_view(request):
     order = Order.objects.create(
         buyer=buyer,
         total_amount=total_amount,
-        status='Pending'
-    )
+        status='Pending')
     
     # Create OrderItems
     for item in cart_items:
@@ -451,9 +443,7 @@ def checkout_view(request):
             order=order,
             product=item.product_id,
             quantity=item.quantity,
-            price=item.product_id.product_price
-        )
-    
+            price=item.product_id.product_price)
     # Clear cart
     cart_items.delete()
     return Response({"message": "Order created!", "total_amount": total_amount})
