@@ -1,6 +1,6 @@
 # Create your views here.
 
-from .models import CustomUser, Cart, CartItems, Product, CategoryName, SubCategory,Order, OrderItem
+from .models import CustomUser, Cart, CartItems, Product, CategoryName, SubCategory,Order, OrderItem, Wishlist
 from .serializers import UserSerializer,CategoryNameSerializer,SubcategorySerializer,ProductSerializer,CartSerializer, CartItemsSerializer, OrderItemSerializer, OrderSerializer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -9,7 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q
-
+from .serializers import ProductSerializer
 
 # ----------------------------------
 # Pagination
@@ -103,7 +103,6 @@ def buyer_update(request):
         return Response({"message": "Buyer updated", "data": serializer.data}, status=200)
     return Response({"message": "Failed", "error": serializer.errors}, status=400)
 
-
 # Delete Account/Profile View
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
@@ -185,7 +184,6 @@ def category_update(request):
         return Response({"message": "Category updated", "Updated Category": serializer.data}, status=200)
     return Response({"message": "Failed", "error": serializer.errors}, status=400)
 
-
 # Category Delete
 @api_view(['DELETE'])
 @permission_classes([IsAdminUser])
@@ -235,7 +233,6 @@ def subcategory_view(request):
     serializer = SubcategorySerializer(result_page, many=True)
     return paginator.get_paginated_response(serializer.data)
 
-
 # Sub category Update & Delete
 @api_view(['PUT', 'DELETE'])
 @permission_classes([IsAdminUser])
@@ -257,7 +254,6 @@ def subcategory_update_delete(request):
     elif request.method == 'DELETE':
         subcategory.delete()
         return Response({"Message": "Deleted successfully"}, status=200)
-
 
 # ----------------------------------------------------------------------
 # Product CRUD
@@ -296,7 +292,6 @@ def product_get(request):
     serializer = ProductSerializer(result_page, many=True)
     return paginator.get_paginated_response(serializer.data)
 
-
 # Product update 
 @api_view(['PATCH', 'PUT'])
 @permission_classes([IsAdminUser])
@@ -312,7 +307,6 @@ def product_update(request):
         serializer.save()
         return Response({"message": "Product updated", "data": serializer.data}, status=200)
     return Response({"message": "Failed", "error": serializer.errors}, status=400)
-
 
 # Product Delete
 @api_view(['DELETE'])
@@ -339,7 +333,6 @@ def cart_get(request):
     result_page = paginator.paginate_queryset(cart_data, request)
     serializer = CartSerializer(result_page, many=True)
     return paginator.get_paginated_response(serializer.data)
-
 
 # Cart Add
 @api_view(['POST'])
@@ -399,7 +392,6 @@ def cart_items_get(request):
     serializer = CartItemsSerializer(result_page, many=True)
     return paginator.get_paginated_response(serializer.data)
 
-
 # Cart items Create
 @api_view(['POST'])
 @permission_classes([IsAuthenticated, IsAdminUser])
@@ -431,7 +423,6 @@ def cart_items_update_delete(request):
         cart_item.delete()
         return Response({"Message": "Delete success"}, status=200)
 
-
 #--------------------------------------------------------------------------
 
 # Cancel Order view
@@ -460,7 +451,6 @@ def grt_all_orders_view(request):
     result_page = paginator.paginate_queryset(data, request)
     serializer = OrderSerializer(result_page, many=True)
     return paginator.get_paginated_response(serializer.data)
-
 
 #--------------------------------------------------------------------------
 
@@ -495,3 +485,41 @@ def checkout_view(request):
     # Clear cart
     cart_items.delete()
     return Response({"message": "Order created!", "total_amount": total_amount})
+
+#--------------------------------------------------------------------------
+# Wishlist
+
+@api_view(['GET', 'POST', 'DELETE'])
+def whishlist_add_get_remove(request):
+    user = request.user
+
+    if request.method == 'GET':
+        wish_items = Wishlist.objects.filter(user=user)
+        products = [item.product for item in wish_items]
+        serializer = ProductSerializer(products, many=True)
+        return Response({"Message": "Fetch Success ","wishlist": serializer.data})
+
+    elif request.method == 'POST':
+        product_id = request.data.get('product_id')
+        try:
+            if product_id:
+                product = Product.objects.get(product_id=product_id)
+            else:
+                return Response({"error": "Enter product_id"}, status=400)
+        except Product.DoesNotExist:
+            return Response({"error": "Product not found"}, status=404)
+        
+        if Wishlist.objects.create(user=user, product=product):
+            return Response({"message": "Success product added to wishlist"}, status=201)
+
+    elif request.method == 'DELETE':
+        product_id = request.data.get('product_id')
+        if not product_id:
+            return Response({"Message": "Enter valid id"}, status=400)
+        try:
+            product = Wishlist.objects.get(product_id = product_id)
+            product.delete()
+            return Response({"message": " Delete Success "}, status = 200)
+        except Wishlist.DoesNotExist:
+            return Response({"Message": "product not found"}, status=404)
+        

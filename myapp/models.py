@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
@@ -80,3 +81,13 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.product.product_name} x {self.quantity}"
+
+class Wishlist(models.Model):
+    wishlist_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.product.product_name}"
+    

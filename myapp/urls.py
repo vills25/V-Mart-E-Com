@@ -45,5 +45,8 @@ urlpatterns = [
     path('searchsubcategory/', search_subcategory),
     path('searchproduct/', search_product),
     path('searchcartitems/', search_cart_items),
-
+    
+    path('wishlistview/', whishlist_add_get_remove),
+    path('wishlistadd/', whishlist_add_get_remove),
+    path('wishlistremove/', whishlist_add_get_remove)
 ]
