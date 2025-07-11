@@ -1,7 +1,7 @@
 # Create your views here.
 
 from .models import CustomUser, Cart, CartItems, Product, CategoryName, SubCategory,Order, OrderItem, Wishlist
-from .serializers import UserSerializer,CategoryNameSerializer,SubcategorySerializer,ProductSerializer,CartSerializer, CartItemsSerializer, OrderItemSerializer, OrderSerializer
+from .serializers import UserSerializer,CategoryNameSerializer,RegisterSerializer,SubcategorySerializer,ProductSerializer,CartSerializer, CartItemsSerializer, OrderItemSerializer, OrderSerializer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
@@ -21,7 +21,7 @@ class StandardResultsSetPagination(PageNumberPagination):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register_view(request):
-    serializer = UserSerializer(data = request.data)
+    serializer = RegisterSerializer(data = request.data)
     if serializer.is_valid():
         serializer.save()
         return Response({"message": "Buyer registeration successfull", "Buyer": serializer.data},status=201)
@@ -263,8 +263,8 @@ def subcategory_update_delete(request):
 def search_product(request):
     search_query = request.data.get('product_name','')
     products = Product.objects.filter(
-        Q(product_name__icontains=search_query) |
-        Q(product_description__icontains=search_query))    
+        Q(product_name__contains=search_query) |
+        Q(product_description__contains=search_query))    
      
     paginator = StandardResultsSetPagination()
     result_page = paginator.paginate_queryset(products, request)
