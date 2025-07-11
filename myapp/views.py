@@ -82,18 +82,27 @@ def search_buyer(request):
 @permission_classes([IsAuthenticated])
 def buyer_profile_view(request):
     data = CustomUser.objects.all()
-    serializer = UserSerializer(data, many=True)
-    return Response({"message": "buyer Profile Fatched", "data": serializer.data}, status=200)
+    paginator = StandardResultsSetPagination()
+    result_page = paginator.paginate_queryset(data, request)
+    serializer = UserSerializer(result_page, many=True)
+    return paginator.get_paginated_response(serializer.data)
 
 # Update Buyer Profile
-@api_view(['PUT','PATCH'])
+@api_view(['PUT', 'PATCH'])
 @permission_classes([IsAuthenticated])
 def buyer_update(request):
-    serializer = UserSerializer(CustomUser,data=request.data, partial = True)
+    buyer_id = request.data.get('buyer_id')
+    try:
+        buyer = CustomUser.objects.get(id=buyer_id)
+    except CustomUser.DoesNotExist:
+        return Response({"error": "Buyer not found"}, status=404)
+
+    serializer = UserSerializer(buyer, data=request.data, partial=True)
     if serializer.is_valid():
         serializer.save()
         return Response({"message": "Buyer updated", "data": serializer.data}, status=200)
     return Response({"message": "Failed", "error": serializer.errors}, status=400)
+
 
 # Delete Account/Profile View
 @api_view(['DELETE'])
@@ -157,18 +166,27 @@ def category_create(request):
 @permission_classes([AllowAny])
 def category_view(request):
     data = CategoryName.objects.all()
-    serializer = CategoryNameSerializer(data, many = True)
-    return Response({"Message": "Data Fatched", "Category": serializer.data})
+    paginator = StandardResultsSetPagination()
+    result_page = paginator.paginate_queryset(data, request)
+    serializer = CategoryNameSerializer(result_page, many=True)
+    return paginator.get_paginated_response(serializer.data)
 
 # Category Update
 @api_view(['PUT'])
 @permission_classes([IsAdminUser])
 def category_update(request):
-    serializer = CategoryNameSerializer(CategoryName, data=request.data, partial=True)
+    category_id = request.data.get("id")
+    try:
+        category = CategoryName.objects.get(id=category_id)
+    except CategoryName.DoesNotExist:
+        return Response({"error": "Category not found"}, status=404)
+
+    serializer = CategoryNameSerializer(category, data=request.data, partial=True)
     if serializer.is_valid():
         serializer.save()
         return Response({"message": "Category updated", "Updated Category": serializer.data}, status=200)
     return Response({"message": "Failed", "error": serializer.errors}, status=400)
+
 
 # Category Delete
 @api_view(['DELETE'])
@@ -214,26 +232,34 @@ def subcategory_create(request):
 @permission_classes([AllowAny])
 def subcategory_view(request):
     data = SubCategory.objects.all()
-    serializer = SubcategorySerializer(data, many = True)
-    return Response({"Message":"Fatched", "Data": serializer.data}, status = 200)
+    paginator = StandardResultsSetPagination()
+    result_page = paginator.paginate_queryset(data, request)
+    serializer = SubcategorySerializer(result_page, many=True)
+    return paginator.get_paginated_response(serializer.data)
+
 
 # Sub category Update & Delete
 @api_view(['PUT', 'DELETE'])
 @permission_classes([IsAdminUser])
 def subcategory_update_delete(request):
     get_subcategory_id = request.data.get('id')
-    
+
+    try:
+        subcategory = SubCategory.objects.get(id=get_subcategory_id)
+    except SubCategory.DoesNotExist:
+        return Response({"error": "Subcategory not found"}, status=404)
+
     if request.method == 'PUT':
-        serializer = SubcategorySerializer(SubCategory, data = request.data, partial = True)
-        if serializer.is_valid:
+        serializer = SubcategorySerializer(subcategory, data=request.data, partial=True)
+        if serializer.is_valid():
             serializer.save()
-            return Response({"Message": "Sub category updated", "Data": serializer.data}, status=201)
-        return Response({"Message" : "failde", "error": serializer.errors}, status=400)
-    
+            return Response({"Message": "Sub category updated", "Data": serializer.data}, status=200)
+        return Response({"Message": "Failed", "error": serializer.errors}, status=400)
+
     elif request.method == 'DELETE':
-        subcategory = SubCategory.objects.get(id = get_subcategory_id)
         subcategory.delete()
-        return Response({"Message": "Deleted success"}, status=200)
+        return Response({"Message": "Deleted successfully"}, status=200)
+
 
 # ----------------------------------------------------------------------
 # Product CRUD
@@ -267,19 +293,28 @@ def product_create(request):
 @permission_classes([AllowAny])
 def product_get(request):
     data = Product.objects.all()
-    serializer = ProductSerializer(data, many=True)
-    return Response({"message": "Fatched", "data": serializer.data}, status=200)
+    paginator = StandardResultsSetPagination()
+    result_page = paginator.paginate_queryset(data, request)
+    serializer = ProductSerializer(result_page, many=True)
+    return paginator.get_paginated_response(serializer.data)
+
 
 # Product update 
-@api_view(['PUT'])
+@api_view(['PATCH', 'PUT'])
 @permission_classes([IsAdminUser])
 def product_update(request):
-    product_id = request.data.get('id')
-    serializer = ProductSerializer(Product, product_id, data=request.data, partial=True)
+    product_id = request.data.get('product_id')
+    try:
+        product = Product.objects.get(product_id=product_id)
+    except Product.DoesNotExist:
+        return Response({"error": "Product not found"}, status=404)
+
+    serializer = ProductSerializer(product, data=request.data, partial=True)
     if serializer.is_valid():
         serializer.save()
         return Response({"message": "Product updated", "data": serializer.data}, status=200)
     return Response({"message": "Failed", "error": serializer.errors}, status=400)
+
 
 # Product Delete
 @api_view(['DELETE'])
@@ -302,8 +337,11 @@ def product_delete(request):
 @permission_classes([IsAuthenticated, IsAdminUser])
 def cart_get(request):
     cart_data = Cart.objects.all()
-    serializer = CartSerializer(cart_data, many = True)
-    return Response({"Message": " Cart Fatched", "Cart": serializer.data},status=200)
+    paginator = StandardResultsSetPagination()
+    result_page = paginator.paginate_queryset(cart_data, request)
+    serializer = CartSerializer(result_page, many=True)
+    return paginator.get_paginated_response(serializer.data)
+
 
 # Cart Add
 @api_view(['POST'])
@@ -317,21 +355,25 @@ def cart_create(request):
 
 # Cart Update & Delete
 @api_view(['PUT', 'DELETE'])
-@permission_classes([IsAuthenticated,IsAdminUser])
+@permission_classes([IsAuthenticated, IsAdminUser])
 def cart_update_delete(request):
     cart_id = request.data.get('id')
+    try:
+        cart = Cart.objects.get(id=cart_id)
+    except Cart.DoesNotExist:
+        return Response({"error": "Cart not found"}, status=404)
 
     if request.method == 'PUT':
-        serializer = CartSerializer(Cart, cart_id, data = request.data, partial = True)
+        serializer = CartSerializer(cart, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response({"Messsage": "Update Success", "Updated Data": serializer.data}, status=201)
-        return Response({"Message": "Faile", "error": serializer.errors}, status=400)
-    
+            return Response({"Messsage": "Update Success", "Updated Data": serializer.data}, status=200)
+        return Response({"Message": "Failed", "error": serializer.errors}, status=400)
+
     if request.method == 'DELETE':
-        cart = Cart.objects.get(id = cart_id)
         cart.delete()
         return Response({"Message": "Delete success"}, status=200)
+
 
 #--------------------------------------------------------------------------
 
@@ -356,8 +398,11 @@ def search_cart_items(request):
 @permission_classes([IsAuthenticated, IsAdminUser])
 def cart_items_get(request):
     cart_items_data = CartItems.objects.all()
-    serializer = CartItemsSerializer(cart_items_data, many = True)
-    return Response({"Message":"Fatched success", "Cart Items": serializer.data}, status=200)
+    paginator = StandardResultsSetPagination()
+    result_page = paginator.paginate_queryset(cart_items_data, request)
+    serializer = CartItemsSerializer(result_page, many=True)
+    return paginator.get_paginated_response(serializer.data)
+
 
 # Cart items Create
 @api_view(['POST'])
@@ -371,21 +416,25 @@ def cart_items_create(request):
 
 # Cart Items Update & Delete
 @api_view(['PUT', 'DELETE'])
-@permission_classes([IsAuthenticated,IsAdminUser])
+@permission_classes([IsAuthenticated, IsAdminUser])
 def cart_items_update_delete(request):
     cart_items_id = request.data.get('id')
+    try:
+        cart_item = CartItems.objects.get(id=cart_items_id)
+    except CartItems.DoesNotExist:
+        return Response({"error": "Cart Item not found"}, status=404)
 
     if request.method == 'PUT':
-        serializer = CartItemsSerializer(CartItems, cart_items_id, data = request.data, partial = True)
+        serializer = CartItemsSerializer(cart_item, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response({"Messsage": "Update Success", "Updated cart items Data": serializer.data}, status=201)
-        return Response({"Message": "Faile", "error": serializer.errors}, status=400)
-    
+            return Response({"Messsage": "Update Success", "Updated cart items Data": serializer.data}, status=200)
+        return Response({"Message": "Failed", "error": serializer.errors}, status=400)
+
     if request.method == 'DELETE':
-        cart = CartItems.objects.get(id = cart_items_id)
-        cart.delete()
+        cart_item.delete()
         return Response({"Message": "Delete success"}, status=200)
+
 
 #--------------------------------------------------------------------------
 
@@ -411,8 +460,11 @@ def cancel_order(request):
 @permission_classes([IsAdminUser])
 def grt_all_orders_view(request):
     data = Order.objects.all()
-    serializer = OrderSerializer(data, many=True)
-    return Response({"orders": serializer.data})
+    paginator = StandardResultsSetPagination()
+    result_page = paginator.paginate_queryset(data, request)
+    serializer = OrderSerializer(result_page, many=True)
+    return paginator.get_paginated_response(serializer.data)
+
 
 #--------------------------------------------------------------------------
 
