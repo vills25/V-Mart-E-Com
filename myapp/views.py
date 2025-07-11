@@ -118,24 +118,22 @@ def buyer_delete(request):
     except CustomUser.DoesNotExist:
         return Response({"error": "Buyer not found"}, status=404)
 
-# Now Not Working
-# Reset Password
+# Forgot Password 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def reset_password_view(request):
+@permission_classes([AllowAny]) 
+def forgot_password_view(request):
     buyer_email = request.data.get("email")
-    if not buyer_email:
-        return Response({"error": "Enter Email please"}, status=400) 
+    new_password = request.data.get("new_password")
+    
+    if not buyer_email or not new_password:
+        return Response({"error": "Enter email and new password please!!"}, status=400)
     try:
-        buyer = CustomUser.objects.get(email=buyer_email)
+        buyer = CustomUser.objects.get(email__iexact=buyer_email)
+        buyer.set_password(new_password)
+        buyer.save()
+        return Response({"message": "Password Update Success"}, status=200)
     except CustomUser.DoesNotExist:
-        return Response({"error": "Buyer not found"}, status=404)
-
-#python django shell...    
-# from myapp.models import CustomUser
-# user = CustomUser.objects.get(username="testuser")
-# user.set_password("new_password")
-# user.save()    
+        return Response({"error": "Buyer not exist"}, status=404)
 
 # ----------------------------------------------------------------------
 # Category CRUD
@@ -374,9 +372,7 @@ def cart_update_delete(request):
         cart.delete()
         return Response({"Message": "Delete success"}, status=200)
 
-
 #--------------------------------------------------------------------------
-
 # Cartitems
 
 # Cart Items Search & Paginations
