@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
 ]
 
-AUTH_USER_MODEL = 'myapp.CustomUser'
+AUTH_USER_MODEL = 'myapp.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
