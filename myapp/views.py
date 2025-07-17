@@ -164,7 +164,22 @@ def login(request):
         'access': str(refresh.access_token),
         'user': user_data,
         'user_type': user_type
-    })
+    }, status= status.HTTP_201_CREATED)
+
+
+# Log-Out view
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout_view(request):
+    try:
+        refresh_token = request.data.get("refresh")
+        token = RefreshToken(refresh_token)
+        token.blacklist()
+        return Response({"message": "Logout successful."}, status=status.HTTP_205_RESET_CONTENT)
+    except Exception as e:
+        return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
+
+#-----------------------------------------------------------------------------------------------------------------------------------------
 
 # view all buyers admin only
 @api_view(['GET'])
@@ -234,7 +249,7 @@ def seller_profile_with_products_orders(request):
         "orders": order_serializer.data}
     return Response({"Data fatched ":fatched_data}, status=status.HTTP_200_OK)
 
-# -----------------------------------------------
+#----------------------------------------------------------------------------------------------------------------------------------------
 
 # Category show/get 
 @api_view(['GET'])
@@ -266,20 +281,21 @@ def category_create(request):
         return Response({"error":"categoryname is required"}, status= status.HTTP_400_BAD_REQUEST)
 
     try:
-        category = Category.objects.create(
-            category_name = data['category_name'],
-            category_detail = data.get('category_detail', ''),  
-            created_by = request.user,  
-            updated_by = request.user  
-        ) 
-        return Response({
-            "message": "category created successfull",
-            "category":{
-                'category_id': category.category_id,
-                'category_name': category.category_name,
-                'category_detail': category.category_detail,
-            }
-        }, status= status.HTTP_201_CREATED)
+        with transaction.atomic():
+            category = Category.objects.create(
+                category_name = data['category_name'],
+                category_detail = data.get('category_detail', ''),  
+                created_by = request.user,  
+                updated_by = request.user  
+            ) 
+            return Response({
+                "message": "category created successfull",
+                "category":{
+                    'category_id': category.category_id,
+                    'category_name': category.category_name,
+                    'category_detail': category.category_detail,
+                }
+            }, status= status.HTTP_201_CREATED)
 
     except Exception as e :
         return Response({"error":str(e)}, status= status.HTTP_400_BAD_REQUEST)
@@ -319,7 +335,7 @@ def category_delete(request, pk):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)        
     
-# -----------------------------------------------
+#----------------------------------------------------------------------------------------------------------------------------------------
 
 # Sub Category show/get 
 @api_view(['GET'])
@@ -358,29 +374,30 @@ def subcategory_create(request):
         return Response({"error":"subcategoryname and category id is required"}, status= status.HTTP_400_BAD_REQUEST)
     
     try:
-        # Check if category exists
-        category = Category.objects.get(pk=data['category'])
-        
-        subcategory = SubCategory.objects.create(
-            subcategory_name=data['subcategory_name'],
-            subcategory_detail=data.get('subcategory_detail', ''),
-            category=category,
-            created_by = request.user,  
-            updated_by = request.user
-        )
-        
-        return Response({
-            "message": "Subcategory created successfully",
-            "subcategory": {
-                'subcategory_id': subcategory.subcategory_id,
-                'subcategory_name': subcategory.subcategory_name,
-                'subcategory_detail': subcategory.subcategory_detail,
-                'category': {
-                    'category_id': category.category_id,
-                    'category_name': category.category_name
+         with transaction.atomic():
+            # Check if category exists
+            category = Category.objects.get(pk=data['category'])
+            
+            subcategory = SubCategory.objects.create(
+                subcategory_name=data['subcategory_name'],
+                subcategory_detail=data.get('subcategory_detail', ''),
+                category=category,
+                created_by = request.user,  
+                updated_by = request.user
+            )
+            
+            return Response({
+                "message": "Subcategory created successfully",
+                "subcategory": {
+                    'subcategory_id': subcategory.subcategory_id,
+                    'subcategory_name': subcategory.subcategory_name,
+                    'subcategory_detail': subcategory.subcategory_detail,
+                    'category': {
+                        'category_id': category.category_id,
+                        'category_name': category.category_name
+                    }
                 }
-            }
-        }, status=status.HTTP_201_CREATED)
+            }, status=status.HTTP_201_CREATED)
     except Category.DoesNotExist:
         return Response({"error": "Category not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
@@ -411,13 +428,13 @@ def subcategory_update(request):
     if 'subcategory_id' not in data:
         return Response({"error": "subcategory_id is required"}, status=status.HTTP_400_BAD_REQUEST)
     
+    # check for subcategory_id
     try:
         subcategory = SubCategory.objects.get(pk=data['subcategory_id'])
     except SubCategory.DoesNotExist:
         return Response({"error": "Subcategory not found"}, status=status.HTTP_404_NOT_FOUND)
     
     # Validate required fields
-    
     if 'subcategory_name' not in data or 'category' not in data:
         return Response({"error": " subcategory_name and category is required"}, status=status.HTTP_400_BAD_REQUEST)
      
@@ -446,4 +463,182 @@ def subcategory_update(request):
         return Response({"error": "Category not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+#----------------------------------------------------------------------------------------------------------------------------------------
+
+# Product get
+@api_view(['GET'])
+def product_get(request):
+    product_id = request.data.get('product_id') 
+
+    if product_id:
+        try:
+            product = Product.objects.get(pk=product_id, is_active=True)
+            serializer = ProductSerializer(product)
+            return Response({"Product data": serializer.data}, status=status.HTTP_200_OK)
+        except Product.DoesNotExist:
+            return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+    else:
+        all_products = Product.objects.filter(is_active=True)
+        serializer = ProductSerializer(all_products, many=True)
+        return Response({"all_products": serializer.data}, status=status.HTTP_200_OK)
+
+# PRODUCT CREATE
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def product_create(request):
+
+    try:
+        seller_username = request.data.get('seller')
+        get_seller = Seller.objects.get(user__username=seller_username)
+    except Seller.DoesNotExist:
+        return Response({"error": "Invalid  or seller not exist"}, status= status.HTTP_400_BAD_REQUEST)
+
+
+    required_fields = ['name', 'description', 'price', 'quantity', 'category', 'sub_category', 'brand']
+    data = request.data
+
+    if not all(field in data for field in required_fields):
+        return Response({"Please fill all required  fields"}, status= status.HTTP_400_BAD_REQUEST)
     
+    price = float(data['price'])
+    if price < 0 :
+        return Response({"Price should be greater then Zero"}, status= status.HTTP_400_BAD_REQUEST)
+    
+    sale_price = float(data['sale_price'])
+    if sale_price >= price:
+        return Response({"Sale price should be less than actual price"}, status= status.HTTP_400_BAD_REQUEST)
+
+    quantity = data['quantity']
+    if quantity <= 0:
+        return Response({"Product quantity should be greater than zero"}, status= status.HTTP_400_BAD_REQUEST)
+
+    try:
+        category_instance = Category.objects.get(pk=data['category'])
+        subcategory_instance = SubCategory.objects.get(pk=data['sub_category'])
+    except (Category.DoesNotExist, SubCategory.DoesNotExist):
+        return Response({"error": "Invalid category or subcategory"}, status= status.HTTP_400_BAD_REQUEST)
+
+    try:
+        with transaction.atomic():    
+            create_product = Product.objects.create(
+                seller = get_seller,
+                name=data['name'],
+                description=data['description'],
+                price=price,
+                sale_price=sale_price,
+                quantity=quantity,
+                category=category_instance,
+                sub_category=subcategory_instance,
+                brand=data['brand'],
+                tags=data.get('tags', ''),
+                size=data.get('size', ''),
+                color=data.get('color', ''),
+                fabric=data.get('fabric', ''),
+                in_stock=quantity > 0,
+                created_by = request.user
+            )
+            serializer = ProductSerializer(create_product)
+            return Response({"Message": "Product created successfully", "Product data": serializer.data}, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# Product Update
+@api_view(['PUT', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def product_update(request):
+
+    try:
+        seller = Seller.objects.get(user=request.user)
+        product_id = request.data.get('product_id') 
+        if not product_id:
+            return Response({"error": "product_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        product = Product.objects.get(pk=product_id, seller=seller)
+    except Seller.DoesNotExist:
+        return Response({"error": "Only sellers can update products"}, status=status.HTTP_403_FORBIDDEN)
+    except Product.DoesNotExist:
+        return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND) 
+    
+    #accept data from user
+    data = request.data
+    
+    #instance for category-subcategory
+    try:
+        category_instance = Category.objects.get(pk=data['category'])
+        subcategory_instance = SubCategory.objects.get(pk=data['sub_category'])
+    except (Category.DoesNotExist, SubCategory.DoesNotExist):
+        return Response({"error": "Invalid category and subcategory or Not exists."}, status=400)
+
+    try:
+
+        if 'name' in data:
+            product.name = data['name']
+
+        if 'description' in data:
+            product.description = data['description']
+
+        if 'price' in data:
+            if data['price'] < 0:
+              return Response({"Price should be greater then Zero"}, status=status.HTTP_400_BAD_REQUEST)
+            product.price = data['price'] 
+
+        if 'sale_price' in data:
+            if data['sale_price'] > product.price:
+              return Response({"sale Price should be less then actual product"}, status=status.HTTP_400_BAD_REQUEST)
+            product.price = data['sale_price']
+            
+        if 'quantity' in data:
+            if data['quantity'] < 0:
+              return Response({"quantity should be greater then Zero"}, status=status.HTTP_400_BAD_REQUEST)
+            product.price = data['quantity']
+
+        if 'category' in data:
+            product.category = category_instance   
+
+        if 'sub_category' in data:
+            product.sub_category = subcategory_instance
+
+        if 'brand' in data:
+            product.brand = data['brand']
+
+        if 'tags' in data:
+            product.tags =  data['tags']
+
+        if 'size' in data:
+            product.size = data['size']
+
+        if 'color'in data:
+            product.color = data['color']
+
+        if 'fabric'in data:
+            product.fabric = data['fabric']
+        
+        updated_by = request.user
+        product.save()
+        serializer = ProductSerializer(product)
+        return Response ({"Message":"Product Updated", 'seller': seller.seller_id, "updated product data": serializer.data}, status= status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({"Error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+# Product Delete 
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def product_delete(request):
+    try:
+        seller = Seller.objects.get(user=request.user)
+        product_id = request.data.get('product_id') 
+        if not product_id:
+            return Response({"error": "product_id is required to delete Product"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        product = Product.objects.get(pk=product_id, seller=seller)
+        product.delete()
+        return Response({"Product Deleted"}, status=status.HTTP_200_OK)
+    except Seller.DoesNotExist:
+        return Response({"error": "Only sellers can Delete products"}, status=status.HTTP_403_FORBIDDEN)
+    except Product.DoesNotExist:
+        return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+  
+#-------------------------------------------------------------------------------------------------

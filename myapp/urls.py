@@ -60,17 +60,29 @@ urlpatterns = [
     path('seller_register/',register_seller),
     path('buyer_register/',register_buyer),
     path('login/', login),
-
+    path('logout_view/', logout_view),
+    
+  
     path('all_buyers_view_by_admin/', admin_all_buyers),
-    path('all_sellers_view_by_admin/', admin_all_sellers),
+    path('admin_all_sellers/', admin_all_sellers),
     path('buyer_profile_with_orders/', buyer_profile_with_orders),
     path('seller_profile_with_products_orders/', seller_profile_with_products_orders),
     
     path('category_get/', category_get),
     path('category_create/', category_create),
     path('category_update/', category_update), 
+    path('category_delete/', category_delete),
 
     path('sub_category_get/', subcategory_get),
     path('sub_category_create/', subcategory_create),
     path('sub_category_update/', subcategory_update),
+    path('subcategory_delete/', subcategory_delete),
+
+    path('product_get/', product_get),
+    path('product_create/', product_create),
+    path('product_update/', product_update),
+    path('product_delete/', product_delete)
+    
+    
+
 ]

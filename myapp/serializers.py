@@ -33,13 +33,24 @@ class SubCategorySerializer(serializers.ModelSerializer):
         model = SubCategory
         fields = ['subcategory_id', 'subcategory_name', 'subcategory_detail' , 'category', 'created_at', 'updated_at', 'created_by', 'created_by']
 
+# class ProductSerializer(serializers.ModelSerializer):
+#     seller = SellerSerializer()
+#     class Meta:
+#         model = Product
+#         # fields = ['product_id', 'seller', 'name', 'description', 'images' ,'price', 'sale_price', 'quantity', 'category', 'sub_category',
+#         #           'brand', 'tags', 'size', 'color', 'fabric', 'in_stock','is_active', 'created_at', 'updated_at', 'created_by', 'created_by']
+#         fields = "__all__"
+
 class ProductSerializer(serializers.ModelSerializer):
-    seller = SellerSerializer()
+    seller_id = serializers.SerializerMethodField()
     class Meta:
         model = Product
-        fields = ['product_id', 'seller', 'name', 'description', 'images', 'sku','price', 'sale_price', 'quantity', 'category', 'sub_category',
-                  'brand', 'tags', 'size', 'color', 'fabric', 'in_stock','is_active', 'created_at', 'updated_at', 'created_by', 'created_by']
-
+        fields = ['product_id', 'seller_id', 'name', 'description', 'price', 
+                 'sale_price', 'quantity', 'brand', 'in_stock', 'created_at', 'created_by', 'updated_at','updated_by']
+    
+    def get_seller_id(self, obj):
+        return obj.seller.seller_id if obj.seller else None
+    
 class OrderItemSerializer(serializers.ModelSerializer):
     product = ProductSerializer()
     
@@ -66,8 +77,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Order
-        fields = ['order_id', 'order_number', 'status', 'total', 'order_date', 
-                 'dispatch_date', 'delivery_date', 'tracking_number', 
+        fields = ['order_id', 'order_number', 'status', 'total', 'order_date', 'dispatch_date', 'delivery_date', 'tracking_number', 
                  'shipping_company', 'items']
 class ProductListSerializer(serializers.ModelSerializer):
     seller_name = serializers.CharField(source='seller.user.username')
@@ -75,7 +85,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Product
-        fields = ['id', 'name', 'price', 'sale_price', 'main_image', 'seller_name', 'in_stock', 'category', 'sub_category']
+        fields = ['product_id', 'name', 'price', 'sale_price', 'main_image', 'seller_name', 'in_stock', 'category', 'sub_category']
         read_only_fields = fields
 
 class OrderSummarySerializer(serializers.ModelSerializer):
@@ -84,7 +94,7 @@ class OrderSummarySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Order
-        fields = ['id', 'order_number', 'status', 'total', 'order_date', 'item_count', 'first_product']
+        fields = ['order_id', 'order_number', 'status', 'total', 'order_date', 'item_count', 'first_product']
         read_only_fields = fields
 
 class SellerProductSerializer(serializers.ModelSerializer):
@@ -93,5 +103,5 @@ class SellerProductSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Product
-        fields = ['id', 'name', 'price', 'sale_price', 'quantity', 'in_stock', 'is_active', 'review_count', 'average_rating']
+        fields = ['product_id', 'name', 'price', 'sale_price', 'quantity', 'in_stock', 'is_active', 'review_count', 'average_rating']
         read_only_fields = fields

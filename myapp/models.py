@@ -19,6 +19,9 @@ class Seller(models.Model):
 
     def __str__(self):
         return self.user.username
+    
+    def get_seller(self, obj):
+        return obj.seller.user.username
 
 class Buyer(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -39,8 +42,8 @@ class Category(models.Model):
     category_detail = models.CharField(max_length=100, null = True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name = 'category_created_by')
-    updated_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name = 'category_updated_by')
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name = 'category_created_by', null = True)
+    updated_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name = 'category_updated_by', null = True)
 
     def __str__(self):
         return self.category_name
@@ -52,8 +55,8 @@ class SubCategory(models.Model):
     subcategory_detail = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name = 'subcategory_created_by')
-    updated_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name = 'subcategory_updated_by')
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name = 'subcategory_created_by', null = True)
+    updated_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name = 'subcategory_updated_by', null = True)
 
     class Meta:
         unique_together = ('category', 'subcategory_name')
@@ -61,15 +64,12 @@ class SubCategory(models.Model):
     def __str__(self):
         return f"{self.category.category_name} - {self.subcategory_name}"
 
-
-
 class Product(models.Model):
     product_id = models.AutoField(primary_key=True)
     seller = models.ForeignKey(Seller, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     description = models.TextField()
     images = models.ImageField()
-    sku = models.CharField(max_length=50, unique=True)
     price = models.DecimalField(max_digits=10, decimal_places=2,)
     sale_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, validators=[MinValueValidator(0.01)])
     quantity = models.PositiveIntegerField()
@@ -84,8 +84,8 @@ class Product(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name = 'product_created_by')
-    updated_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name = 'product_updated_by')
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name = 'product_created_by', null = True)
+    updated_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name = 'product_updated_by', null = True)
 
     def __str__(self):
         return self.name
