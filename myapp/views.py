@@ -420,7 +420,7 @@ def subcategory_update(request):
     
     if 'subcategory_name' not in data or 'category' not in data:
         return Response({"error": " subcategory_name and category is required"}, status=status.HTTP_400_BAD_REQUEST)
-    
+     
     try:
         category = Category.objects.get(pk=data['category'])
         
@@ -443,8 +443,7 @@ def subcategory_update(request):
             }
         })
     except Category.DoesNotExist:
-        return Response({"error": "Category not found"}, 
-                       status=status.HTTP_404_NOT_FOUND)
+        return Response({"error": "Category not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
-        return Response({"error": str(e)}, 
-                       status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
