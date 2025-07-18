@@ -95,9 +95,11 @@ class Cart(models.Model):
     buyer = models.OneToOneField(Buyer, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name = 'cart_created_by', blank = True, null = True) 
+    updated_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name = 'cart_updated_by', blank = True, null = True) 
 
     def __str__(self):
-        return f"Cart #{self.cart_id} for {self.buyer.user.username}"
+        return f"Cart no. {self.cart_id} for {self.buyer.user.username}"
 
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, related_name='items', on_delete=models.CASCADE)
@@ -106,6 +108,7 @@ class CartItem(models.Model):
     selected_color = models.CharField(max_length=50, blank=True)
     selected_size = models.CharField(max_length=50, blank=True)
     added_at = models.DateTimeField(auto_now_add=True)
+    added_by = models.ForeignKey(User, on_delete= models.CASCADE, related_name = 'cart_items_created_by',null = True) 
 
     class Meta:
         unique_together = ('cart', 'product', 'selected_color', 'selected_size')

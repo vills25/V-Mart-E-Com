@@ -78,11 +78,14 @@ urlpatterns = [
     path('sub_category_update/', subcategory_update),
     path('subcategory_delete/', subcategory_delete),
 
+    path('product_search/', product_search),
+
     path('product_get/', product_get),
     path('product_create/', product_create),
     path('product_update/', product_update),
-    path('product_delete/', product_delete)
+    path('product_delete/', product_delete),
     
-    
-
+    path('cart_get/', cart_get),
+    path('cart_create/', cart_create),
+    path('cart_delete/', cart_delete)
 ]

@@ -113,6 +113,20 @@ DATABASES = {
     }
 }
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'V_Mart_Ecom',            # your DB name
+#         'USER': 'root',                   # MySQL username (default is root)
+#         'PASSWORD': '',                   # MySQL password (leave blank if none)
+#         'HOST': 'localhost',              # or 127.0.0.1
+#         'PORT': '3306',                   # MySQL default port
+#         'OPTIONS': {
+#             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+#         },
+#     }
+# }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

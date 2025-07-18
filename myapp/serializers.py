@@ -33,14 +33,6 @@ class SubCategorySerializer(serializers.ModelSerializer):
         model = SubCategory
         fields = ['subcategory_id', 'subcategory_name', 'subcategory_detail' , 'category', 'created_at', 'updated_at', 'created_by', 'created_by']
 
-# class ProductSerializer(serializers.ModelSerializer):
-#     seller = SellerSerializer()
-#     class Meta:
-#         model = Product
-#         # fields = ['product_id', 'seller', 'name', 'description', 'images' ,'price', 'sale_price', 'quantity', 'category', 'sub_category',
-#         #           'brand', 'tags', 'size', 'color', 'fabric', 'in_stock','is_active', 'created_at', 'updated_at', 'created_by', 'created_by']
-#         fields = "__all__"
-
 class ProductSerializer(serializers.ModelSerializer):
     seller_id = serializers.SerializerMethodField()
     class Meta:
@@ -50,7 +42,26 @@ class ProductSerializer(serializers.ModelSerializer):
     
     def get_seller_id(self, obj):
         return obj.seller.seller_id if obj.seller else None
-    
+
+class CartSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cart
+        fields = ['cart_id', 'buyer', 'created_at', 'updated_at']
+
+class CartItemSerializer(serializers.ModelSerializer):
+    product = ProductSerializer()
+    total_price = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CartItem
+        fields = ['id', 'product', 'quantity', 'selected_color', 'selected_size', 'total_price']
+
+    def get_total_price(self, obj):
+#       Calculate manually instead of using @property
+        price = obj.product.sale_price if obj.product.sale_price else obj.product.price
+        return str(price * obj.quantity)
+
+
 class OrderItemSerializer(serializers.ModelSerializer):
     product = ProductSerializer()
     

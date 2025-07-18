@@ -1,0 +1,453 @@
+
+
+# PRODUCT DATA
+[
+  {
+    "product_id": 1,
+    "name": "Men's Cotton T-Shirt",
+    "description": "100% cotton regular fit t-shirt for men.",
+    "images": "",
+    "price": 599,
+    "sale_price": 499,
+    "quantity": 100,
+    "brand": "Levi's",
+    "tags": "casual,summer,cotton",
+    "size": "L",
+    "color": "Navy Blue",
+    "fabric": "Cotton",
+    "in_stock": 1,
+    "is_active": 1,
+    "created_at": "2025-07-17 09:05:20.996042",
+    "updated_at": "2025-07-17 09:05:20.996042",
+    "category_id": 2,
+    "created_by_id": 6,
+    "updated_by_id": null,
+    "seller_id": 3,
+    "sub_category_id": 2
+  },
+  {
+    "product_id": 2,
+    "name": "Men's Slim Fit Jeans",
+    "description": "Dark blue slim-fit jeans with stretchable fabric for maximum comfort.",
+    "images": "",
+    "price": 75,
+    "sale_price": 499,
+    "quantity": 100,
+    "brand": "Levi's",
+    "tags": "denim,casual,slimfit",
+    "size": "32",
+    "color": "Dark Blue",
+    "fabric": "Denim",
+    "in_stock": 1,
+    "is_active": 1,
+    "created_at": "2025-07-17 09:14:41.652112",
+    "updated_at": "2025-07-17 10:36:56.717838",
+    "category_id": 2,
+    "created_by_id": 6,
+    "updated_by_id": null,
+    "seller_id": 3,
+    "sub_category_id": 2
+  },
+  {
+    "product_id": 3,
+    "name": "Floral Printed Kurti",
+    "description": "Printed A-line kurti with 3/4th sleeves and lightweight cotton fabric.",
+    "images": "",
+    "price": 50,
+    "sale_price": 499,
+    "quantity": 100,
+    "brand": "Biba",
+    "tags": "ethnic,floral,casual",
+    "size": "M",
+    "color": "Peach",
+    "fabric": "Cotton",
+    "in_stock": 1,
+    "is_active": 1,
+    "created_at": "2025-07-17 09:19:38.911451",
+    "updated_at": "2025-07-17 10:38:18.345108",
+    "category_id": 3,
+    "created_by_id": 6,
+    "updated_by_id": null,
+    "seller_id": 3,
+    "sub_category_id": 3
+  },
+  {
+    "product_id": 4,
+    "name": "Banarasi Silk Saree",
+    "description": "Traditional Banarasi saree with intricate zari work and rich texture.",
+    "images": "",
+    "price": 20,
+    "sale_price": 499,
+    "quantity": 100,
+    "brand": "Meena Bazaar",
+    "tags": "ethnic,wedding,silk",
+    "size": "Free",
+    "color": "Maroon",
+    "fabric": "Silk",
+    "in_stock": 1,
+    "is_active": 1,
+    "created_at": "2025-07-17 09:21:00.563095",
+    "updated_at": "2025-07-17 10:38:53.268912",
+    "category_id": 3,
+    "created_by_id": 6,
+    "updated_by_id": null,
+    "seller_id": 3,
+    "sub_category_id": 4
+  },
+  {
+    "product_id": 5,
+    "name": "Galaxy S22 5G",
+    "description": "Samsung Galaxy S22 5G with 8GB RAM and 128GB storage.",
+    "images": "",
+    "price": 40,
+    "sale_price": 499,
+    "quantity": 100,
+    "brand": "Samsung",
+    "tags": "smartphone,android,5G",
+    "size": "6.1 inch",
+    "color": "Phantom Black",
+    "fabric": "NA",
+    "in_stock": 1,
+    "is_active": 1,
+    "created_at": "2025-07-17 09:21:03.887206",
+    "updated_at": "2025-07-17 10:39:46.622051",
+    "category_id": 4,
+    "created_by_id": 6,
+    "updated_by_id": null,
+    "seller_id": 3,
+    "sub_category_id": 5
+  },
+  {
+    "product_id": 6,
+    "name": "Men's Cotton T-Shirt",
+    "description": "100% cotton regular fit t-shirt for men.",
+    "images": "",
+    "price": 599,
+    "sale_price": 499,
+    "quantity": 100,
+    "brand": "Levi's",
+    "tags": "casual,summer,cotton",
+    "size": "L",
+    "color": "Navy Blue",
+    "fabric": "Cotton",
+    "in_stock": 1,
+    "is_active": 1,
+    "created_at": "2025-07-17 09:30:04.171290",
+    "updated_at": "2025-07-17 09:30:04.171290",
+    "category_id": 2,
+    "created_by_id": 6,
+    "updated_by_id": null,
+    "seller_id": 3,
+    "sub_category_id": 2
+  }
+]
+#########################################################
+
+[
+    {
+        "category_id": 1,
+        "category_name": "Books",
+        "created_at": "2025-07-16 18:08:51.322910",
+        "updated_at": "2025-07-16 18:08:51.322910",
+        "created_by_id": 1,
+        "category_detail": "All kinds of books",
+        "updated_by_id": 1
+    },
+    {
+        "category_id": 2,
+        "category_name": "Men's Fashion",
+        "created_at": "2025-07-16 18:11:07.879988",
+        "updated_at": "2025-07-16 18:11:07.879988",
+        "created_by_id": 1,
+        "category_detail": "Clothing, accessories and footwear for men",
+        "updated_by_id": 1
+    },
+    {
+        "category_id": 3,
+        "category_name": "Women's Fashion",
+        "created_at": "2025-07-16 18:11:17.438115",
+        "updated_at": "2025-07-16 18:11:17.438115",
+        "created_by_id": 1,
+        "category_detail": "Trendy clothing, accessories, and footwear for women",
+        "updated_by_id": 1
+    },
+    {
+        "category_id": 4,
+        "category_name": "Electronics",
+        "created_at": "2025-07-16 18:11:26.632385",
+        "updated_at": "2025-07-16 18:11:26.632385",
+        "created_by_id": 1,
+        "category_detail": "Latest gadgets and electronic devices",
+        "updated_by_id": 1
+    },
+    {
+        "category_id": 5,
+        "category_name": "Home & Kitchen",
+        "created_at": "2025-07-16 18:11:34.563091",
+        "updated_at": "2025-07-16 18:11:34.563091",
+        "created_by_id": 1,
+        "category_detail": "Furniture, decor, appliances, and kitchen essentials",
+        "updated_by_id": 1
+    },
+    {
+        "category_id": 6,
+        "category_name": "Beauty & Personal Care",
+        "created_at": "2025-07-16 18:11:41.188705",
+        "updated_at": "2025-07-16 18:11:41.188705",
+        "created_by_id": 1,
+        "category_detail": "Cosmetics, skincare, and grooming products",
+        "updated_by_id": 1
+    },
+    {
+        "category_id": 7,
+        "category_name": "Sports & Outdoors",
+        "created_at": "2025-07-16 18:11:51.244080",
+        "updated_at": "2025-07-16 18:11:51.244080",
+        "created_by_id": 1,
+        "category_detail": "Fitness equipment, activewear, and outdoor gear",
+        "updated_by_id": 1
+    },
+    {
+        "category_id": 8,
+        "category_name": "Toys & Baby Products",
+        "created_at": "2025-07-16 18:12:01.670250",
+        "updated_at": "2025-07-16 18:12:01.670250",
+        "created_by_id": 1,
+        "category_detail": "Toys, games, and essentials for babies and kids",
+        "updated_by_id": 1
+    },
+    {
+        "category_id": 9,
+        "category_name": "Books & Stationery",
+        "created_at": "2025-07-16 18:12:13.079198",
+        "updated_at": "2025-07-16 18:12:13.079198",
+        "created_by_id": 1,
+        "category_detail": "Books, office supplies, and educational material",
+        "updated_by_id": 1
+    },
+    {
+        "category_id": 10,
+        "category_name": "Automotive",
+        "created_at": "2025-07-16 18:12:20.267377",
+        "updated_at": "2025-07-16 18:12:20.267377",
+        "created_by_id": 1,
+        "category_detail": "Vehicle accessories, tools, and care products",
+        "updated_by_id": 1
+    },
+    {
+        "category_id": 11,
+        "category_name": "Groceries",
+        "created_at": "2025-07-16 18:12:26.612627",
+        "updated_at": "2025-07-16 18:12:26.612627",
+        "created_by_id": 1,
+        "category_detail": "Daily needs, packaged food, beverages",
+        "updated_by_id": 1
+    }
+]
+
+#############################################################################
+
+[
+    {
+        "subcategory_id": 1,
+        "subcategory_name": "T-Shirts",
+        "subcategory_detail": "Casual and graphic t-shirts for men",
+        "created_at": "2025-07-16 18:26:07.037769",
+        "updated_at": "2025-07-16 18:26:07.037769",
+        "category_id": 2,
+        "created_by_id": 1,
+        "updated_by_id": 1
+    },
+    {
+        "subcategory_id": 2,
+        "subcategory_name": "Jeans",
+        "subcategory_detail": "Denim and casual jeans for men",
+        "created_at": "2025-07-16 18:26:32.030429",
+        "updated_at": "2025-07-16 18:26:32.030429",
+        "category_id": 2,
+        "created_by_id": 1,
+        "updated_by_id": 1
+    },
+    {
+        "subcategory_id": 3,
+        "subcategory_name": "Kurtis",
+        "subcategory_detail": "Trendy kurtis and ethnic wear for women",
+        "created_at": "2025-07-16 18:26:43.519312",
+        "updated_at": "2025-07-16 18:26:43.519312",
+        "category_id": 3,
+        "created_by_id": 1,
+        "updated_by_id": 1
+    },
+    {
+        "subcategory_id": 4,
+        "subcategory_name": "Sarees",
+        "subcategory_detail": "Designer and daily wear sarees",
+        "created_at": "2025-07-16 18:26:56.762789",
+        "updated_at": "2025-07-16 18:26:56.762789",
+        "category_id": 3,
+        "created_by_id": 1,
+        "updated_by_id": 1
+    },
+    {
+        "subcategory_id": 5,
+        "subcategory_name": "Smartphones",
+        "subcategory_detail": "Latest Android and iOS phones",
+        "created_at": "2025-07-16 18:28:28.494876",
+        "updated_at": "2025-07-16 18:28:28.494876",
+        "category_id": 4,
+        "created_by_id": 1,
+        "updated_by_id": 1
+    },
+    {
+        "subcategory_id": 6,
+        "subcategory_name": "Laptops",
+        "subcategory_detail": "Gaming, business, and student laptops",
+        "created_at": "2025-07-16 18:28:46.671035",
+        "updated_at": "2025-07-16 18:28:46.671035",
+        "category_id": 4,
+        "created_by_id": 1,
+        "updated_by_id": 1
+    },
+    {
+        "subcategory_id": 7,
+        "subcategory_name": "Cookware",
+        "subcategory_detail": "Pans, pots, and kitchen tools",
+        "created_at": "2025-07-16 18:29:12.370671",
+        "updated_at": "2025-07-16 18:29:12.370671",
+        "category_id": 5,
+        "created_by_id": 1,
+        "updated_by_id": 1
+    },
+    {
+        "subcategory_id": 8,
+        "subcategory_name": "Home Decor",
+        "subcategory_detail": "Wall art, lighting, and decorations",
+        "created_at": "2025-07-16 18:29:23.894168",
+        "updated_at": "2025-07-16 18:29:23.894168",
+        "category_id": 5,
+        "created_by_id": 1,
+        "updated_by_id": 1
+    },
+    {
+        "subcategory_id": 9,
+        "subcategory_name": "Skincare",
+        "subcategory_detail": "Face wash, creams, and moisturizers",
+        "created_at": "2025-07-16 18:29:41.679826",
+        "updated_at": "2025-07-16 18:29:41.679826",
+        "category_id": 6,
+        "created_by_id": 1,
+        "updated_by_id": 1
+    },
+    {
+        "subcategory_id": 10,
+        "subcategory_name": "Haircare",
+        "subcategory_detail": "Shampoos, conditioners, and serums",
+        "created_at": "2025-07-16 18:30:01.548715",
+        "updated_at": "2025-07-16 18:30:01.548715",
+        "category_id": 6,
+        "created_by_id": 1,
+        "updated_by_id": 1
+    },
+    {
+        "subcategory_id": 11,
+        "subcategory_name": "Gym Equipment",
+        "subcategory_detail": "Dumbbells, yoga mats, and more",
+        "created_at": "2025-07-16 18:30:22.217970",
+        "updated_at": "2025-07-16 18:30:22.217970",
+        "category_id": 7,
+        "created_by_id": 1,
+        "updated_by_id": 1
+    },
+    {
+        "subcategory_id": 12,
+        "subcategory_name": "Outdoor Gear",
+        "subcategory_detail": "Tents, backpacks, and camping tools",
+        "created_at": "2025-07-16 18:30:34.688460",
+        "updated_at": "2025-07-16 18:30:34.688460",
+        "category_id": 7,
+        "created_by_id": 1,
+        "updated_by_id": 1
+    },
+    {
+        "subcategory_id": 13,
+        "subcategory_name": "Baby Toys",
+        "subcategory_detail": "Soft toys and educational games for toddlers",
+        "created_at": "2025-07-16 18:30:54.199852",
+        "updated_at": "2025-07-16 18:30:54.199852",
+        "category_id": 8,
+        "created_by_id": 1,
+        "updated_by_id": 1
+    },
+    {
+        "subcategory_id": 14,
+        "subcategory_name": "Baby Care",
+        "subcategory_detail": "Diapers, baby wipes, lotions",
+        "created_at": "2025-07-16 18:31:08.029668",
+        "updated_at": "2025-07-16 18:31:08.029668",
+        "category_id": 8,
+        "created_by_id": 1,
+        "updated_by_id": 1
+    },
+    {
+        "subcategory_id": 15,
+        "subcategory_name": "Notebooks",
+        "subcategory_detail": "Spiral, ruled, and plain notebooks",
+        "created_at": "2025-07-16 18:31:44.467499",
+        "updated_at": "2025-07-16 18:31:44.468507",
+        "category_id": 1,
+        "created_by_id": 1,
+        "updated_by_id": 1
+    },
+    {
+        "subcategory_id": 16,
+        "subcategory_name": "Fiction Books",
+        "subcategory_detail": "Novels, stories, and literature",
+        "created_at": "2025-07-16 18:32:03.124052",
+        "updated_at": "2025-07-16 18:32:03.124052",
+        "category_id": 9,
+        "created_by_id": 1,
+        "updated_by_id": 1
+    },
+    {
+        "subcategory_id": 17,
+        "subcategory_name": "Car Accessories",
+        "subcategory_detail": "Seat covers, air fresheners, gadgets",
+        "created_at": "2025-07-16 18:32:34.839016",
+        "updated_at": "2025-07-16 18:32:34.839016",
+        "category_id": 10,
+        "created_by_id": 1,
+        "updated_by_id": 1
+    },
+    {
+        "subcategory_id": 18,
+        "subcategory_name": "Motorbike Gear",
+        "subcategory_detail": "Helmets, jackets, and covers",
+        "created_at": "2025-07-16 18:32:51.870605",
+        "updated_at": "2025-07-16 18:32:51.870605",
+        "category_id": 10,
+        "created_by_id": 1,
+        "updated_by_id": 1
+    },
+    {
+        "subcategory_id": 19,
+        "subcategory_name": "Snacks & Beverages",
+        "subcategory_detail": "Chips, juices, and soft drinks",
+        "created_at": "2025-07-16 18:33:08.199549",
+        "updated_at": "2025-07-16 18:33:08.199549",
+        "category_id": 11,
+        "created_by_id": 1,
+        "updated_by_id": 1
+    },
+    {
+        "subcategory_id": 20,
+        "subcategory_name": "Daily Essentials",
+        "subcategory_detail": "Toiletries, cleaning items, and home supplies",
+        "created_at": "2025-07-16 18:33:25.544615",
+        "updated_at": "2025-07-16 18:56:19.865944",
+        "category_id": 10,
+        "created_by_id": 1,
+        "updated_by_id": 1
+    }
+]
+
+

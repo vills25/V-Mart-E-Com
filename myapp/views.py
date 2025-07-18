@@ -7,6 +7,7 @@ from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import *
 from .serializers import *
+from django.db.models import Q
 
 def valid_email(email):
     if '@' in email and '.' in email:
@@ -160,7 +161,6 @@ def login(request):
                 return Response({"error": "User type not recognized"}, status=status.HTTP_400_BAD_REQUEST)
         
     return Response({
-        'refresh': str(refresh),
         'access': str(refresh.access_token),
         'user': user_data,
         'user_type': user_type
@@ -466,7 +466,7 @@ def subcategory_update(request):
 
 #----------------------------------------------------------------------------------------------------------------------------------------
 
-# Product get
+# Show Product by id or get all product
 @api_view(['GET'])
 def product_get(request):
     product_id = request.data.get('product_id') 
@@ -482,6 +482,46 @@ def product_get(request):
         all_products = Product.objects.filter(is_active=True)
         serializer = ProductSerializer(all_products, many=True)
         return Response({"all_products": serializer.data}, status=status.HTTP_200_OK)
+
+# Product Search by category, subcategory, produt name
+@api_view(['GET'])
+def product_search(request):
+    product_id = request.data.get('product_id')
+    search_query = request.data.get('search', '')
+    by_category = request.data.get('category')
+    by_subcategory = request.data.get('sub_category')
+
+    if product_id:
+        try:
+            product_by_id = Product.objects.get(pk=product_id, is_active=True)
+            product_byid_serializer = ProductSerializer(product_by_id)  # Removed many=True for single object
+            return Response({"Product by id": product_byid_serializer.data}, status=status.HTTP_200_OK)
+        except Product.DoesNotExist:
+            return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+    
+    products = Product.objects.filter(is_active=True)
+
+    if search_query:
+        products = products.filter(
+            Q(name__icontains=search_query) | 
+            Q(description__icontains=search_query) |
+            Q(brand__icontains=search_query) |
+            Q(tags__icontains=search_query) |
+            Q(fabric__icontains=search_query) |
+            Q(seller__icontains=search_query)
+        )
+
+    if by_category:
+        products = products.filter(category=by_category)
+
+    if by_subcategory:
+        products = products.filter(sub_category=by_subcategory)
+
+    try:
+        product_serializer = ProductSerializer(products, many=True)
+        return Response({"products": product_serializer.data}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # PRODUCT CREATE
 @api_view(['POST'])
@@ -642,3 +682,130 @@ def product_delete(request):
         return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
   
 #-------------------------------------------------------------------------------------------------
+
+# CART Implement
+
+# Cart Get
+@api_view(['GET'])
+def cart_get(request):
+
+    try:
+        cart_id = request.data.get('cart_id') 
+        if not cart_id:
+            return Response({"Please enter Cart ID"}, status= status.HTTP_400_BAD_REQUEST)
+
+        get_cart = Cart.objects.get(pk = cart_id, buyer__user = request.user)
+        get_items = CartItem.objects.filter(cart=get_cart).select_related('product')
+        
+        total_items = get_items.count()
+        subtotal = sum(
+            item.quantity * (item.product.sale_price if item.product.sale_price else item.product.price)
+            for item in get_items
+        )
+        
+        serializer = CartItemSerializer(get_items, many=True)
+        return Response({
+            "cart_id": get_cart.cart_id,
+            "total_items": total_items,
+            "subtotal": subtotal,
+            "items": serializer.data
+        })
+        
+    except Cart.DoesNotExist:
+        return Response({"error": "Cart not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+   
+
+# Cart Create
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def cart_create(request):
+    try:
+        # Get or create Buyer for the user
+        buyer, created = Buyer.objects.get_or_create(user=request.user)
+        
+        # Get or create Cart for the buyer
+        cart, created = Cart.objects.get_or_create(buyer=buyer)
+
+        data = request.data
+        required_fields = ['product_id', 'quantity']
+
+        if not all(field in data for field in required_fields):
+            return Response({"error": "Please fill all required fields"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            product = Product.objects.get(pk=data['product_id'], is_active=True, in_stock=True)
+        except Product.DoesNotExist:
+            return Response({"error": "Product does not exist or is unavailable"}, status=status.HTTP_404_NOT_FOUND)
+
+        quantity = int(data['quantity'])
+        if quantity < 1:
+            return Response({"error": "Quantity must be at least 1"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        existing_item = CartItem.objects.filter(
+            cart=cart,
+            product=product,
+            selected_color=data.get('color', ''),
+            selected_size=data.get('size', '')
+        ).first()
+        
+        if existing_item:
+            existing_item.quantity += quantity
+            existing_item.save()
+            action = "Quantity updated"
+        else:
+            CartItem.objects.create(
+                cart=cart,
+                product=product,
+                quantity=quantity,
+                selected_color=data.get('color', ''),
+                selected_size=data.get('size', '')
+            )
+            action = "Item added"
+
+        return Response({
+            "message": f"{action} successfully",
+            "cart_id": cart.cart_id
+        }, status=status.HTTP_201_CREATED)
+        
+    except Exception as e: 
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# Cart Items Update
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def cart_items_update(request):
+    try:
+        cart_item_id = request.data.get('cart_item_id')
+        if not cart_item_id:
+            return Response({'error': 'cart_item_id required'},status= status.HTTP_400_BAD_REQUEST)
+        try:
+            cart_item = CartItem.objects.get(id=cart_item_id)
+            cart_item.quantity = request.data.get('quantity', cart_item.quantity)
+            cart_item.save()
+            return Response({'message': 'Cart Item updated', "item_id": cart_item, "new_quantity": cart_item.quantity},status= status.HTTP_201_CREATED)
+        except CartItem.DoesNotExist:
+            return Response({'error': 'Cart item not found'}, status= status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# Cart Delete
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def cart_delete(request):
+    try:
+        buyer = Buyer.objects.get(user=request.user)
+        cart_id = request.data.get('cart_id') 
+        if not cart_id:
+            return Response({"error": "cart_id is required to delete Product"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        cart = Cart.objects.get(pk=cart_id, buyer=buyer)
+        cart.delete()
+        return Response({"Cart Deleted"}, status=status.HTTP_200_OK)
+    except Product.DoesNotExist:
+        return Response({"error": "Cart not found"}, status=status.HTTP_404_NOT_FOUND)
+
+# Order Create
+
