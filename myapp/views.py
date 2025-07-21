@@ -1,3 +1,4 @@
+from datetime import datetime
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
@@ -8,6 +9,12 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .models import *
 from .serializers import *
 from django.db.models import Q
+import random
+
+def generate_order_id():
+    order_name = "#ord"
+    number_generate = random.randint(10000, 99999) 
+    return f"{order_name}{number_generate}"
 
 def valid_email(email):
     if '@' in email and '.' in email:
@@ -23,14 +30,14 @@ def register_seller(request):
 
     if not all(field in data for field in required_fields):
         return Response({"error": "please fill all fields"}, status=status.HTTP_400_BAD_REQUEST)
-
+      
     check_mobile_no = data['mobile_no']
     if not (check_mobile_no.isdigit() and len(check_mobile_no) == 10):
         return Response({"error": "Invalid mobile number. Please enter 10-digit mobile number."}, status=status.HTTP_400_BAD_REQUEST)
 
     if not valid_email(data['email']):
         return Response({"error": "Invalid email format"}, status=status.HTTP_400_BAD_REQUEST)
-    
+
     try:
         with transaction.atomic():
             # Check if username, email exists
@@ -179,7 +186,7 @@ def logout_view(request):
     except Exception as e:
         return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
 
-#-----------------------------------------------------------------------------------------------------------------------------------------
+# ================================================================================================
 
 # view all buyers admin only
 @api_view(['GET'])
@@ -249,7 +256,7 @@ def seller_profile_with_products_orders(request):
         "orders": order_serializer.data}
     return Response({"Data fatched ":fatched_data}, status=status.HTTP_200_OK)
 
-#----------------------------------------------------------------------------------------------------------------------------------------
+# ================================================================================================
 
 # Category show/get 
 @api_view(['GET'])
@@ -335,7 +342,7 @@ def category_delete(request, pk):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)        
     
-#----------------------------------------------------------------------------------------------------------------------------------------
+# ================================================================================================
 
 # Sub Category show/get 
 @api_view(['GET'])
@@ -464,7 +471,7 @@ def subcategory_update(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-#----------------------------------------------------------------------------------------------------------------------------------------
+# ================================================================================================
 
 # Show Product by id or get all product
 @api_view(['GET'])
@@ -483,45 +490,86 @@ def product_get(request):
         serializer = ProductSerializer(all_products, many=True)
         return Response({"all_products": serializer.data}, status=status.HTTP_200_OK)
 
+
 # Product Search by category, subcategory, produt name
-@api_view(['GET'])
+@api_view(['POST'])
 def product_search(request):
-    product_id = request.data.get('product_id')
-    search_query = request.data.get('search', '')
-    by_category = request.data.get('category')
-    by_subcategory = request.data.get('sub_category')
-
-    if product_id:
-        try:
-            product_by_id = Product.objects.get(pk=product_id, is_active=True)
-            product_byid_serializer = ProductSerializer(product_by_id)  # Removed many=True for single object
-            return Response({"Product by id": product_byid_serializer.data}, status=status.HTTP_200_OK)
-        except Product.DoesNotExist:
-            return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
-    
-    products = Product.objects.filter(is_active=True)
-
-    if search_query:
-        products = products.filter(
-            Q(name__icontains=search_query) | 
-            Q(description__icontains=search_query) |
-            Q(brand__icontains=search_query) |
-            Q(tags__icontains=search_query) |
-            Q(fabric__icontains=search_query) |
-            Q(seller__icontains=search_query)
-        )
-
-    if by_category:
-        products = products.filter(category=by_category)
-
-    if by_subcategory:
-        products = products.filter(sub_category=by_subcategory)
-
     try:
-        product_serializer = ProductSerializer(products, many=True)
-        return Response({"products": product_serializer.data}, status=status.HTTP_200_OK)
+        data = request.data
+
+        product_id = data.get('product_id')
+        name = data.get('name', '').strip()
+        description = data.get('description', '').strip()
+        category = data.get('category', '').strip()
+        sub_category = data.get('sub_category', '').strip()
+        price = data.get('price')
+        brand = data.get('brand', '').strip()
+        seller_username = data.get('seller', '').strip()
+        tags = data.get('tags', '').strip()
+        color = data.get('color', '').strip()
+        size = data.get('size', '').strip()
+        sort_by = data.get('sort_by', '').strip()
+
+        queryset = Product.objects.filter(is_active=True)
+
+        if product_id:
+            queryset = queryset.filter(pk=product_id)
+
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+
+        if description:
+            queryset = queryset.filter(description__icontains=description)
+
+        if category:
+            try:
+                queryset = queryset.filter(category__category_name__icontains=category)
+            except:
+                queryset = queryset.filter(category__icontains=category)
+
+        if sub_category:
+            try:
+                queryset = queryset.filter(sub_category__sub_category_name__icontains=sub_category)
+            except:
+                queryset = queryset.filter(sub_category__icontains=sub_category)
+
+        if price:
+            try:
+                price = float(price)
+                queryset = queryset.filter(Q(price=price) | Q(sale_price=price))
+            except ValueError:
+                return Response({"error": "Invalid price format"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if brand:
+            queryset = queryset.filter(brand__icontains=brand)
+
+        if seller_username:
+            queryset = queryset.filter(seller__user__username__icontains=seller_username)
+
+        if tags:
+            queryset = queryset.filter(tags__icontains=tags)
+
+        if color:
+            queryset = queryset.filter(color__icontains=color)
+
+        if size:
+            queryset = queryset.filter(size__icontains=size)
+
+        if sort_by:
+            try:
+                queryset = queryset.order_by(sort_by)
+            except:
+                return Response({"error": f"Invalid sort field: {sort_by}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not queryset.exists():
+            return Response({"message": "No matching products found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = ProductSerializer(queryset, many=True)
+        return Response({"results": serializer.data}, status=status.HTTP_200_OK)
+
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 # PRODUCT CREATE
 @api_view(['POST'])
@@ -681,7 +729,7 @@ def product_delete(request):
     except Product.DoesNotExist:
         return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
   
-#-------------------------------------------------------------------------------------------------
+# ================================================================================================
 
 # CART Implement
 
@@ -791,7 +839,6 @@ def cart_items_update(request):
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # Cart Delete
-
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def cart_delete(request):
@@ -807,5 +854,278 @@ def cart_delete(request):
     except Product.DoesNotExist:
         return Response({"error": "Cart not found"}, status=status.HTTP_404_NOT_FOUND)
 
-# Order Create
+# =======================================================================================================================================
 
+# Order Create
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_order(request):
+    try:
+        buyer = Buyer.objects.get(user=request.user)
+    except Buyer.DoesNotExist:
+        return Response({"error": "Buyer not exist or invalid buyer"}, status=status.HTTP_403_FORBIDDEN)
+    
+    data = request.data
+    
+    required_fields = ['payment_method', 'transaction_id', 'items']
+    if not all(field in data for field in required_fields):
+        return Response({"error": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if not isinstance(data['items'], list) or len(data['items']) == 0:
+        return Response({"error": "Please Enter item to place order"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        with transaction.atomic():
+            
+            # cod status
+            payment_status = 'COD' if data['payment_method'].upper() == 'COD' else 'COMPLETED'
+            order_status = 'COD' if data['payment_method'].upper() == 'COD' else 'PENDING'
+
+            payment = Payment.objects.create(
+                buyer=buyer,
+                amount=0,
+                payment_method=data['payment_method'],
+                transaction_id=data['transaction_id'],
+                status=payment_status
+            )
+            
+            # Create order
+            order = Order.objects.create(
+                buyer=buyer,
+                payment=payment,
+                order_number=generate_order_id(),
+                status = order_status,
+                total=0 
+            )
+            
+            total_amount = 0
+            order_items = []
+            
+            for item in data['items']:
+                if 'product_id' not in item or 'quantity' not in item:
+                    return Response({"Each item must have product_id and quantity"}, status=status.HTTP_400_BAD_REQUEST)
+                
+                try:
+                    product = Product.objects.get(pk=item['product_id'], is_active=True, in_stock=True)
+                except Product.DoesNotExist:
+                    return Response({f"Product {item['product_id']} not available"}, status=status.HTTP_404_NOT_FOUND)
+                
+                quantity = int(item['quantity'])
+                if quantity < 1:
+                    return Response({"Quantity must be at least 1"}, status=status.HTTP_400_BAD_REQUEST)
+                if quantity > product.quantity:
+                    return Response({f"Not enough stock for product {product.name}"}, status=status.HTTP_404_NOT_FOUND)
+                
+                delivery_address = item.get('delivery_address')
+                delivery_contact = item.get('delivery_contact')
+
+                if not delivery_address or len(delivery_address) <= 20:
+                    return Response({"error": "Please enter your full delivery address including house/flat no., Street name, Area, landmark, Pincode, City and Stat"}, status=status.HTTP_400_BAD_REQUEST)
+
+                if not delivery_contact or len(delivery_contact) < 10:
+                    return Response({"error": "Please enter a valid 10-digit mobile number"}, status=status.HTTP_400_BAD_REQUEST)
+
+                price = product.sale_price if product.sale_price else product.price
+                item_total = price * quantity
+
+                # Create order item
+                order_item = OrderItem.objects.create(
+                    order=order,
+                    product=product,
+                    quantity=quantity,
+                    price=price,
+                    color=item.get('color', ''),
+                    size=item.get('size', ''),
+                    delivery_contact = item.get('delivery_contact'),
+                    delivery_address = item.get('delivery_address')              
+                )
+
+                # Update product quantity
+                product.quantity -= quantity
+                product.in_stock = product.quantity > 0
+                product.save()
+                
+                total_amount += item_total
+                order_items.append({
+                    "product_id": product.product_id,
+                    "name": product.name,
+                    "quantity": quantity,
+                    "price": str(price),
+                    "item_total": str(item_total),
+                    "delivery_address":order_item.delivery_address,
+                    "delivery_contact":order_item.delivery_contact,
+                })
+            
+            # Update payment and order with total amount
+            payment.amount = total_amount
+            payment.save()
+            
+            order.total = total_amount
+            order.save()
+            
+            return Response({
+                "message": "Your Order has been Placed successfully",
+                "order_number": order.order_number,
+                "status": order.status,
+                "total": str(total_amount),
+                "items": order_items
+            }, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# Order view for Buyer
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def order_list(request):
+    try:
+        buyer = Buyer.objects.get(user=request.user)
+    except Buyer.DoesNotExist:
+        return Response({"error": "Only buyers can view orders"}, status=status.HTTP_403_FORBIDDEN)
+    
+    status_filter = request.GET.get('status')
+    orders = Order.objects.filter(buyer=buyer).order_by('-order_date')
+
+    if status_filter:
+        status_filter = status_filter.upper()
+        orders = orders.filter(status=status_filter)
+
+    if not orders.exists():
+        return Response({"message": "No orders found for this buyer or filter"}, status=200)
+
+    serializer = OrderSerializer(orders, many=True)
+    return Response({"order data": serializer.data}, status=status.HTTP_200_OK)
+ 
+
+# Seller can see his Orders details
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def seller_order_list(request):
+    try:
+        seller = Seller.objects.get(user=request.user)
+    except Seller.DoesNotExist:
+        return Response({"error": "Only sellers can view these orders"}, status=status.HTTP_403_FORBIDDEN)
+    
+    status_filter = request.GET.get('status')
+    
+    orders = Order.objects.filter(items__product__seller=seller).distinct().order_by('-order_date')
+    
+    if status_filter:
+        orders = orders.filter(status=status_filter.upper())
+   
+    serializer = OrderSerializer(orders, many=True)
+    return Response(serializer.data)
+
+# Update Order Details By seller 
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_order_status(request):
+    try:
+        seller = Seller.objects.get(user=request.user)
+        order_number = request.data.get('order_number')
+  
+        if not order_number:
+            return Response({"error": "order_number is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        order = Order.objects.get(order_number=order_number)
+        
+        # Ensure the seller is part of the order
+        if not order.items.filter(product__seller=seller).exists():
+            return Response({"error": "You can only update orders of your products"}, status=status.HTTP_403_FORBIDDEN)
+
+    except Seller.DoesNotExist:
+        return Response({"error": "Only sellers can update order status"}, status=status.HTTP_403_FORBIDDEN)
+
+    except Order.DoesNotExist:
+        return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    # Get fields from body
+    new_status = request.data.get('status')
+    tracking_number = request.data.get('tracking_number', '')
+    shipping_company = request.data.get('shipping_company', '')
+    notes = request.data.get('notes', '')
+
+    if not new_status:
+        return Response({"error": "Status is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    valid_statuses = [choice[0] for choice in Order.STATUS_CHOICES]
+    if new_status.upper() not in valid_statuses:
+        return Response({"error": "Invalid status"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Update fields
+    order.status = new_status.upper()
+    order.tracking_number = tracking_number
+    order.shipping_company = shipping_company
+    order.notes = notes
+
+    if new_status.upper() == 'SHIPPED' and not order.dispatch_date:
+        order.dispatch_date = datetime.now()
+    elif new_status.upper() == 'DELIVERED' and not order.delivery_date:
+        order.delivery_date = datetime.now()
+
+    order.save()
+
+    return Response({
+        "message": "Order status updated successfully.",
+        "order_number": order.order_number,
+        "new_status": order.status,
+        "tracking_number": order.tracking_number,
+        "shipping_company": order.shipping_company
+    }, status=status.HTTP_200_OK)
+
+# Product Review Views
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_review(request):
+    try:
+        buyer = Buyer.objects.get(user=request.user)
+    except Buyer.DoesNotExist:
+        return Response({"error": "Buyer does not exist"}, status=status.HTTP_403_FORBIDDEN)
+
+    data = request.data
+    product_id = data.get('product_id')
+
+    if not product_id:
+        return Response({"error": "product_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        product = Product.objects.get(product_id=product_id)
+    except Product.DoesNotExist:
+        return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    try:
+        rating = int(data.get('rating', 0))
+        if rating < 1 or rating > 5:
+            return Response({"error": "Please rate between 1 and 5"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if already reviewed
+        if ProductReview.objects.filter(product=product, buyer=buyer).exists():
+            return Response({"error": "You have already reviewed this product"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check purchase
+        if_purchased = OrderItem.objects.filter(
+            product=product,
+            order__buyer=buyer,
+            order__status='DELIVERED'
+        ).exists()
+
+        if not if_purchased:
+            return Response({"error": "You can only review products you've purchased"}, status=status.HTTP_403_FORBIDDEN)
+
+        # Create review
+        review = ProductReview.objects.create(
+            product=product,
+            buyer=buyer,
+            rating=rating,
+            comment=data.get('comment', '')
+        )
+
+        return Response({
+            "message": "Review submitted successfully",
+            "review_id": review.product_review_id,
+            "product_id": product.product_id,
+            "rating": review.rating
+        }, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

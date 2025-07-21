@@ -67,12 +67,13 @@ class OrderItemSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = OrderItem
-        fields = ['id', 'product', 'quantity', 'price', 'color', 'size']
+        fields = ['id', 'product', 'quantity', 'price', 'color', 'size', 'delivery_address', 'delivery_contact']
 
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = ['payment_id', 'amount', 'payment_method', 'transaction_id', 'status', 'payment_date', 'refund_amount', 'refund_date']
+        
 class OrderSerializer(serializers.ModelSerializer):
     buyer = BuyerSerializer()
     payment = PaymentSerializer()
@@ -90,24 +91,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
         model = Order
         fields = ['order_id', 'order_number', 'status', 'total', 'order_date', 'dispatch_date', 'delivery_date', 'tracking_number', 
                  'shipping_company', 'items']
-class ProductListSerializer(serializers.ModelSerializer):
-    seller_name = serializers.CharField(source='seller.user.username')
-    main_image = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = Product
-        fields = ['product_id', 'name', 'price', 'sale_price', 'main_image', 'seller_name', 'in_stock', 'category', 'sub_category']
-        read_only_fields = fields
-
-class OrderSummarySerializer(serializers.ModelSerializer):
-    item_count = serializers.SerializerMethodField()
-    first_product = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = Order
-        fields = ['order_id', 'order_number', 'status', 'total', 'order_date', 'item_count', 'first_product']
-        read_only_fields = fields
-
+        
 class SellerProductSerializer(serializers.ModelSerializer):
     review_count = serializers.SerializerMethodField()
     average_rating = serializers.SerializerMethodField()
@@ -115,4 +99,13 @@ class SellerProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ['product_id', 'name', 'price', 'sale_price', 'quantity', 'in_stock', 'is_active', 'review_count', 'average_rating']
+        read_only_fields = fields
+
+class ProductReviewSerializer(serializers.ModelSerializer):
+    buyer = BuyerSerializer()
+    product = ProductSerializer()
+    
+    class Meta:
+        model = ProductReview
+        fields = ['product_review_id', 'product', 'buyer', 'rating', 'comment', 'created_at', 'updated_at']
         read_only_fields = fields
