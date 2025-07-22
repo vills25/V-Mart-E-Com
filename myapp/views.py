@@ -74,6 +74,104 @@ def register_seller(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+# Update Seller 
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_seller(request):
+    try:
+        get_seller_id = request.data.get('seller_id')
+        seller = Seller.objects.get(seller_id=get_seller_id)
+        user = seller.user
+        data = request.data
+
+        with transaction.atomic():
+
+            if 'username' in data:
+                if User.objects.filter(username=data['username']).exclude(pk=user.pk).exists():
+                    return Response({"error": "Username already taken"}, status=status.HTTP_400_BAD_REQUEST)
+                user.username = data['username']
+            
+            if 'email' in data:
+                if User.objects.filter(email=data['email']).exclude(pk=user.pk).exists():
+                    return Response({"error": "Email already registered"}, status=status.HTTP_400_BAD_REQUEST)
+                user.email = data['email']
+            
+            if 'password' in data:
+                user.set_password(data['password'])
+            
+            if 'first_name' in data:
+                user.first_name = data['first_name']
+            
+            if 'last_name' in data:
+                user.last_name = data['last_name']
+            
+            user.save()
+
+            if 'mobile_no' in data:
+                if Seller.objects.filter(mobile_no=data['mobile_no']).exclude(pk=seller.pk).exists():
+                    return Response({"error": "Mobile number already registered"}, status=status.HTTP_400_BAD_REQUEST)
+                seller.mobile_no = data['mobile_no']
+            
+            if 'address' in data:
+                seller.address = data['address']
+            
+            if 'profile_picture' in data:
+                seller.profile_picture = data['profile_picture']
+            
+            seller.save()
+
+            return Response({
+                "message": "Seller updated successfully",
+                "seller_id": seller.seller_id,
+                "username": user.username,
+                "email": user.email
+            }, status=status.HTTP_200_OK)
+
+    except Seller.DoesNotExist:
+        return Response({"error": "Seller not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# Delete Seller 
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def seller_delete(request):
+    seller_id = request.data.get('seller_id')
+    if not seller_id:
+        return Response({"error": "enter Seller id please"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        seller = Seller.objects.get(seller_id = seller_id)
+        seller.delete()
+        return Response({"message": "Seller deleted"}, status=status.HTTP_200_OK)
+    except Buyer.DoesNotExist:
+        return Response({"error": "Seller not found"}, status= status.HTTP_404_NOT_FOUND)    
+
+#seller can view his own profile
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def seller_profile_with_products_orders(request):
+    try:
+        seller = Seller.objects.get(user=request.user)
+    except Seller.DoesNotExist:
+        return Response({"error": "Seller not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    seller_serializer = SellerSerializer(seller)
+
+    products = Product.objects.filter(seller=seller, is_active=True)
+    product_serializer = ProductSerializer(products, many=True)
+    
+    orders = Order.objects.filter(items__product__seller=seller).distinct()
+    order_serializer = OrderDetailSerializer(orders, many=True)
+    
+    fatched_data = {
+        "profile": seller_serializer.data,
+        "products": product_serializer.data,
+        "orders": order_serializer.data}
+    return Response({"Data fatched ":fatched_data}, status=status.HTTP_200_OK)
+
+# ================================================================================================
+
 # register Buyer
 @api_view(['POST'])
 def register_buyer(request):
@@ -115,6 +213,100 @@ def register_buyer(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+
+# Update Buyer Profile
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_buyer(request):
+    try:
+
+        get_buyer_id = request.data.get('buyer_id')
+        buyer = Buyer.objects.get(buyer_id=get_buyer_id)
+        user = buyer.user
+        data = request.data
+
+        with transaction.atomic():
+      
+            if 'username' in data:
+                if User.objects.filter(username=data['username']).exclude(pk=user.pk).exists():
+                    return Response({"error": "Username already taken"}, status=status.HTTP_400_BAD_REQUEST)
+                user.username = data['username']
+            
+            if 'email' in data:
+                if User.objects.filter(email=data['email']).exclude(pk=user.pk).exists():
+                    return Response({"error": "Email already registered"}, status=status.HTTP_400_BAD_REQUEST)
+                user.email = data['email']
+            
+            if 'password' in data:
+                user.set_password(data['password'])
+            
+            if 'first_name' in data:
+                user.first_name = data['first_name']
+            
+            if 'last_name' in data:
+                user.last_name = data['last_name']
+            
+            user.save()
+
+            if 'mobile_no' in data:
+                if Buyer.objects.filter(mobile_no=data['mobile_no']).exclude(pk=buyer.pk).exists():
+                    return Response({"error": "Mobile number already registered"}, status=status.HTTP_400_BAD_REQUEST)
+                buyer.mobile_no = data['mobile_no']
+            
+            if 'address' in data:
+                buyer.address = data['address']
+            
+            if 'profile_picture' in data:
+                buyer.profile_picture = data['profile_picture']
+            
+            buyer.save()
+
+            return Response({
+                "message": "Buyer updated successfully",
+                "buyer_id": buyer.buyer_id,
+                "username": user.username,
+                "email": user.email
+            }, status=status.HTTP_200_OK)
+
+    except Buyer.DoesNotExist:
+        return Response({"error": "Buyer not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)    
+
+#Buyer Delete
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def buyer_delete(request):
+    buyer_id = request.data.get('buyer_id')
+    if not buyer_id:
+        return Response({"error": "enter buyer id please"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        buyer = Buyer.objects.get(buyer_id = buyer_id)
+        buyer.delete()
+        return Response({"message": "Buyer deleted"}, status=status.HTTP_200_OK)
+    except Buyer.DoesNotExist:
+        return Response({"error": "Buyer not found"}, status= status.HTTP_404_NOT_FOUND)
+
+# buyer can view his own profile
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def buyer_profile_with_orders(request):
+    try:
+        buyer = Buyer.objects.get(user=request.user)
+    except Buyer.DoesNotExist:
+        return Response({"error": "Buyer not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    buyer_serializer = BuyerSerializer(buyer)
+
+    orders = Order.objects.filter(buyer=buyer)
+    order_serializer = OrderDetailSerializer(orders, many=True)
+
+    fatched_data = {"profile": buyer_serializer.data, "orders": order_serializer.data}
+    
+    return Response({"Data fatched ":fatched_data}, status=status.HTTP_200_OK)
+
+# ================================================================================================
 
 # Login Buyer & Seller 
 @api_view(['POST'])
@@ -185,6 +377,21 @@ def logout_view(request):
         return Response({"message": "Logout successful."}, status=status.HTTP_205_RESET_CONTENT)
     except Exception as e:
         return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
+    
+#Forgot password
+@api_view(['POST'])
+def forgot_password(request):
+    email = request.data.get("email")
+    new_password = request.data.get("new_password")
+    
+    if not email or not new_password:
+        return Response({"error": "Enter email and new password please!!"}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        user = User.objects.get(email__iexact=email)
+        user.save()
+        return Response({"message": "Password Update Success"}, status=status.HTTP_200_OK)
+    except User.DoesNotExist:
+        return Response({"error": "User not exist"}, status= status.HTTP_404_NOT_FOUND)
 
 # ================================================================================================
 
@@ -209,52 +416,6 @@ def admin_all_sellers(request):
         return Response({"Data fatched ":serializer.data}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST) 
-
-# buyer can view his own profile
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def buyer_profile_with_orders(request):
-    try:
-        buyer = Buyer.objects.get(user=request.user)
-    except Buyer.DoesNotExist:
-        return Response({"error": "Buyer not found"}, status=status.HTTP_404_NOT_FOUND)
-
-    # Get buyer profile
-    buyer_serializer = BuyerSerializer(buyer)
-    
-    # Get all orders for this buyer with order items
-    orders = Order.objects.filter(buyer=buyer)
-    order_serializer = OrderDetailSerializer(orders, many=True)
-
-    fatched_data = {"profile": buyer_serializer.data, "orders": order_serializer.data}
-    
-    return Response({"Data fatched ":fatched_data}, status=status.HTTP_200_OK)
-
-#seller can view his own profile
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def seller_profile_with_products_orders(request):
-    try:
-        seller = Seller.objects.get(user=request.user)
-    except Seller.DoesNotExist:
-        return Response({"error": "Seller not found"}, status=status.HTTP_404_NOT_FOUND)
-    
-    # Get seller profile
-    seller_serializer = SellerSerializer(seller)
-    
-    # Get all products for this seller
-    products = Product.objects.filter(seller=seller, is_active=True)
-    product_serializer = ProductSerializer(products, many=True)
-    
-    # Get all orders including seller's products
-    orders = Order.objects.filter(items__product__seller=seller).distinct()
-    order_serializer = OrderDetailSerializer(orders, many=True)
-    
-    fatched_data = {
-        "profile": seller_serializer.data,
-        "products": product_serializer.data,
-        "orders": order_serializer.data}
-    return Response({"Data fatched ":fatched_data}, status=status.HTTP_200_OK)
 
 # ================================================================================================
 
@@ -489,7 +650,7 @@ def product_get(request):
         all_products = Product.objects.filter(is_active=True)
         serializer = ProductSerializer(all_products, many=True)
         return Response({"all_products": serializer.data}, status=status.HTTP_200_OK)
-
+        
 
 # Product Search by category, subcategory, produt name
 @api_view(['POST'])
@@ -509,7 +670,7 @@ def product_search(request):
         color = data.get('color', '').strip()
         size = data.get('size', '').strip()
         sort_by = data.get('sort_by', '').strip()
-
+        
         queryset = Product.objects.filter(is_active=True)
 
         if product_id:
@@ -648,11 +809,9 @@ def product_update(request):
         return Response({"error": "Only sellers can update products"}, status=status.HTTP_403_FORBIDDEN)
     except Product.DoesNotExist:
         return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND) 
-    
-    #accept data from user
+
     data = request.data
     
-    #instance for category-subcategory
     try:
         category_instance = Category.objects.get(pk=data['category'])
         subcategory_instance = SubCategory.objects.get(pk=data['sub_category'])
@@ -963,6 +1122,11 @@ def create_order(request):
             order.total = total_amount
             order.save()
             
+            #clear Itesm from cart after order placed
+            cart = Cart.objects.filter(buyer=buyer)
+            cart_items_delete = CartItem.objects.filter(cart = cart)
+            cart_items_delete.delete()
+
             return Response({
                 "message": "Your Order has been Placed successfully",
                 "order_number": order.order_number,
@@ -996,7 +1160,6 @@ def order_list(request):
     serializer = OrderSerializer(orders, many=True)
     return Response({"order data": serializer.data}, status=status.HTTP_200_OK)
  
-
 # Seller can see his Orders details
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -1073,7 +1236,9 @@ def update_order_status(request):
         "shipping_company": order.shipping_company
     }, status=status.HTTP_200_OK)
 
-# Product Review Views
+# =======================================================================================================================================
+
+# Product Review Create
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_review(request):
@@ -1104,10 +1269,10 @@ def create_review(request):
 
         # Check purchase
         if_purchased = OrderItem.objects.filter(
-            product=product,
-            order__buyer=buyer,
-            order__status='DELIVERED'
-        ).exists()
+                product=product,
+                order__buyer=buyer,
+                order__status='DELIVERED'
+            ).exists()
 
         if not if_purchased:
             return Response({"error": "You can only review products you've purchased"}, status=status.HTTP_403_FORBIDDEN)
@@ -1129,3 +1294,101 @@ def create_review(request):
 
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# Review Update
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_review(request):
+    try:
+        buyer = Buyer.objects.get(user=request.user)
+    except Buyer.DoesNotExist:
+        return Response({"error": "Buyer does not exist"}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        review_id = request.data.get('review_id')
+        review = ProductReview.objects.get(product_review_id=review_id, buyer=buyer)
+    except ProductReview.DoesNotExist:
+        return Response({"error": "Review not founs"}, status=status.HTTP_404_NOT_FOUND)
+
+    data = request.data
+
+    try:
+        if 'rating' in data:
+            rating = int(data['rating'])
+            if rating < 1 or rating > 5:
+                return Response({"error": "Please rate between 1 and 5"}, status=status.HTTP_400_BAD_REQUEST)
+            review.rating = rating
+
+        if 'comment' in data:
+            review.comment = data['comment']
+
+        review.save()
+
+        return Response({
+            "message": "Review updated successfully",
+            "review_id": review.product_review_id,
+            "product_id": review.product.product_id,
+            "rating": review.rating,
+            "comment": review.comment
+        }, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# Review Delete
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_review(request):
+
+    get_review_id = request.data.get('product_review_id')
+
+    if not get_review_id:
+        return Response({'error': 'review_id required'},status= status.HTTP_400_BAD_REQUEST)
+    try:
+        ProductReview.objects.get(product_review_id=get_review_id).delete()
+        return Response({'message': 'Review deleted'}, status=status.HTTP_200_OK)
+    
+    except ProductReview.DoesNotExist:
+        return Response({'error': 'Review not found'},status= status.HTTP_404_NOT_FOUND)
+
+# =======================================================================================================================================
+
+#Wishlist Add product
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def wishlist_create(request):
+    try:
+        buyer = Buyer.objects.get(user=request.data['buyer_id'])
+        product = Product.objects.get(product_id=request.data['product_id'])
+
+        with transaction.atomic():
+            Wishlist.objects.create(
+                buyer=buyer,
+                product=product,
+                added_by=buyer
+            )
+            return Response({"Product Added To Wishlist"}, status=status.HTTP_201_CREATED) 
+    
+    except Buyer.DoesNotExist:
+        return Response({"error": "Buyer does not exist"}, status=status.HTTP_403_FORBIDDEN)
+    
+    except Product.DoesNotExist:
+        return Response({"error": "Entered product does not exist"}, status=status.HTTP_403_FORBIDDEN)
+    
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# Wishlist remove Item
+@api_view(['DELETE'])
+@permission_classes([AllowAny])
+def wishlist_remove(request):
+    wishlist_id = request.data.get('wishlist_id')
+    if not wishlist_id:
+        return Response({'error': 'wishlist_id required'},status= status.HTTP_400_BAD_REQUEST)
+    try:
+        Wishlist.objects.get(wishlist_id=wishlist_id).delete()
+        return Response({'message': 'Wishlist item deleted'}, status=status.HTTP_200_OK)
+    
+    except Wishlist.DoesNotExist:
+        return Response({'error': 'Wishlist item not found'},status= status.HTTP_404_NOT_FOUND)

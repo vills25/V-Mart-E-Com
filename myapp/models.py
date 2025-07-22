@@ -197,3 +197,13 @@ class ProductReview(models.Model):
 
     def __str__(self):
         return f"Review for {self.product.name} by {self.buyer.user.username}"
+    
+class Wishlist(models.Model):
+    wishlist_id = models.AutoField(primary_key=True)
+    buyer = models.ForeignKey(Buyer, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    added_at = models.DateTimeField(auto_now_add=True)
+    added_by = models.ForeignKey(Buyer, on_delete=models.CASCADE, related_name = 'added_by')
+
+    def __str__(self):
+        return f"{self.buyer.user.username} {self.product.name}"

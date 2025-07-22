@@ -58,10 +58,14 @@ from .views import *
 
 urlpatterns = [
     path('seller_register/',register_seller),
+    path('update_seller/', update_seller),
     path('buyer_register/',register_buyer),
+    path('update_buyer/', update_buyer),
+    
+
     path('login/', login),
     path('logout_view/', logout_view),
-    
+    path('forgot_password/', forgot_password),
   
     path('all_buyers_view_by_admin/', admin_all_buyers),
     path('admin_all_sellers/', admin_all_sellers),
@@ -94,5 +98,11 @@ urlpatterns = [
     path('seller_order_list/', seller_order_list),
     path('update_order_status/', update_order_status),
 
-    path('create_review/', create_review)
+    path('create_review/', create_review),
+    path('update_review/', update_review),
+    path('delete_review/', delete_review),
+
+    path('wishlist_create/', wishlist_create),
+    path('wishlist_remove/', wishlist_remove),
+
 ]
