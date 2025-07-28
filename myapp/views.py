@@ -351,7 +351,8 @@ def login(request):
             if user.is_staff or user.is_superuser:
                 user_type = 'admin'
                 user_data = {
-                    "user_id": user.id, # type: ignore
+                    # "user_id": user.id,
+                    "user_id": user.pk,
                     "username": user.username,
                     "email": user.email,
                     "is_superuser": user.is_superuser,
@@ -670,6 +671,7 @@ def product_search(request):
         tags = data.get('tags', '').strip()
         color = data.get('color', '').strip()
         size = data.get('size', '').strip()
+        fabric = data.get('fabric', '').strip()
         sort_by = data.get('sort_by', '').strip().lower()
         
         queryset = Product.objects.filter(is_active=True)
@@ -716,6 +718,9 @@ def product_search(request):
 
         if size:
             queryset = queryset.filter(size__icontains=size)
+
+        if fabric:
+            queryset = queryset.filter(fabric__icontains=fabric)    
         
         sort_options = {
             'price_low': 'price',
@@ -1211,7 +1216,6 @@ def update_order_status(request):
     except Order.DoesNotExist:
         return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    # Get fields from body
     new_status = request.data.get('status')
     tracking_number = request.data.get('tracking_number', '')
     shipping_company = request.data.get('shipping_company', '')

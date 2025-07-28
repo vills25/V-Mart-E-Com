@@ -40,7 +40,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['product_id', 'seller_id', 'name', 'description', 'price', 'sale_price', 'quantity', 'brand', 'in_stock', 'created_at', 'created_by', 'updated_at', 
+        fields = ['product_id', 'seller_id', 'name', 'description', 'price', 'sale_price', 'quantity', 'brand', 'tags','size','color','fabric','in_stock', 'created_at', 'created_by', 'updated_at', 
                   'updated_by', 'review_count', 'average_rating' ]
     
     def get_review_count(self, obj):
