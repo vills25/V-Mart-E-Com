@@ -35,11 +35,21 @@ class SubCategorySerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     seller_id = serializers.SerializerMethodField()
+    review_count = serializers.SerializerMethodField()
+    average_rating = serializers.SerializerMethodField()
+
     class Meta:
         model = Product
-        fields = ['product_id', 'seller_id', 'name', 'description', 'price', 
-                 'sale_price', 'quantity', 'brand', 'in_stock', 'created_at', 'created_by', 'updated_at','updated_by']
+        fields = ['product_id', 'seller_id', 'name', 'description', 'price', 'sale_price', 'quantity', 'brand', 'in_stock', 'created_at', 'created_by', 'updated_at', 
+                  'updated_by', 'review_count', 'average_rating' ]
     
+    def get_review_count(self, obj):
+        return obj.productreview_set.count()
+        
+    def get_average_rating(self, obj):
+        from django.db.models import Avg
+        return obj.productreview_set.aggregate(Avg('rating'))['rating__avg'] or 0
+
     def get_seller_id(self, obj):
         return obj.seller.seller_id if obj.seller else None
 
@@ -57,7 +67,6 @@ class CartItemSerializer(serializers.ModelSerializer):
         fields = ['id', 'product', 'quantity', 'selected_color', 'selected_size', 'total_price']
 
     def get_total_price(self, obj):
-#       Calculate manually instead of using @property
         price = obj.product.sale_price if obj.product.sale_price else obj.product.price
         return str(price * obj.quantity)
 
@@ -82,7 +91,7 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ['order_id', 'order_number', 'buyer', 'payment', 'status','total', 'order_date', 'dispatch_date', 'delivery_date','tracking_number', 
-                   'shipping_company', 'notes', 'items']
+                   'shipping_company', 'notes', 'items', 'refund_status', 'refund_reason', 'refund_response', 'refund_date']
 
 class OrderDetailSerializer(serializers.ModelSerializer):
     items = serializers.SerializerMethodField()
@@ -92,6 +101,10 @@ class OrderDetailSerializer(serializers.ModelSerializer):
         fields = ['order_id', 'order_number', 'status', 'total', 'order_date', 'dispatch_date', 'delivery_date', 'tracking_number', 
                  'shipping_company', 'items']
         
+    def get_items(self, obj):
+        items = obj.items.all()
+        return OrderItemSerializer(items, many=True).data
+
 class SellerProductSerializer(serializers.ModelSerializer):
     review_count = serializers.SerializerMethodField()
     average_rating = serializers.SerializerMethodField()

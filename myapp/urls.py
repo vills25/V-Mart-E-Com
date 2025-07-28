@@ -97,6 +97,8 @@ urlpatterns = [
     path('order_list/', order_list),
     path('seller_order_list/', seller_order_list),
     path('update_order_status/', update_order_status),
+    path('cancel_order_and_refund/', cancel_order_and_refund),
+    path('update_refund_status/', update_refund_status),
 
     path('create_review/', create_review),
     path('update_review/', update_review),

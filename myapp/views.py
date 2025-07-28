@@ -10,6 +10,7 @@ from .models import *
 from .serializers import *
 from django.db.models import Q
 import random
+from decimal import Decimal
 
 def generate_order_id():
     order_name = "#ord"
@@ -669,7 +670,7 @@ def product_search(request):
         tags = data.get('tags', '').strip()
         color = data.get('color', '').strip()
         size = data.get('size', '').strip()
-        sort_by = data.get('sort_by', '').strip()
+        sort_by = data.get('sort_by', '').strip().lower()
         
         queryset = Product.objects.filter(is_active=True)
 
@@ -715,12 +716,19 @@ def product_search(request):
 
         if size:
             queryset = queryset.filter(size__icontains=size)
+        
+        sort_options = {
+            'price_low': 'price',
+            'price_high': '-price',
+            'newest': '-created_at',
 
-        if sort_by:
+        }
+
+        if sort_by in sort_options:
             try:
-                queryset = queryset.order_by(sort_by)
+                queryset = queryset.order_by(sort_options[sort_by])
             except:
-                return Response({"error": f"Invalid sort field: {sort_by}"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Invalid sort field"}, status=status.HTTP_400_BAD_REQUEST)
 
         if not queryset.exists():
             return Response({"message": "No matching products found"}, status=status.HTTP_404_NOT_FOUND)
@@ -926,58 +934,57 @@ def cart_get(request):
 
 # Cart Create
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
 def cart_create(request):
+    buyer_id = request.data.get('buyer_id')
+    product_id = request.data.get('product_id')
+    quantity = request.data.get('quantity')
+
+    if not all([buyer_id, product_id, quantity]):
+        return Response({"error": "buyer_id, product_id, and quantity are required"}, status=status.HTTP_400_BAD_REQUEST)
+    
     try:
-        # Get or create Buyer for the user
-        buyer, created = Buyer.objects.get_or_create(user=request.user)
-        
-        # Get or create Cart for the buyer
-        cart, created = Cart.objects.get_or_create(buyer=buyer)
+        buyer = Buyer.objects.get(buyer_id=buyer_id)
+    except Buyer.DoesNotExist:
+        return Response({"error": "Buyer not found"}, status=status.HTTP_404_NOT_FOUND)
+    
+    try:
+        product = Product.objects.get(pk=product_id, is_active=True, in_stock=True)
+    except Product.DoesNotExist:
+        return Response({"error": "Product not available"}, status=status.HTTP_404_NOT_FOUND)
 
-        data = request.data
-        required_fields = ['product_id', 'quantity']
+    cart, _ = Cart.objects.get_or_create(buyer=buyer)
 
-        if not all(field in data for field in required_fields):
-            return Response({"error": "Please fill all required fields"}, status=status.HTTP_400_BAD_REQUEST)
+    quantity = int(quantity)
+    if quantity < 1:
+        return Response({"error": "Quantity must be at least 1"}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            product = Product.objects.get(pk=data['product_id'], is_active=True, in_stock=True)
-        except Product.DoesNotExist:
-            return Response({"error": "Product does not exist or is unavailable"}, status=status.HTTP_404_NOT_FOUND)
+    existing_item = CartItem.objects.filter(
+        cart=cart,
+        product=product,
+        selected_color=request.data.get('color', ''),
+        selected_size=request.data.get('size', '')
+    ).first()
 
-        quantity = int(data['quantity'])
-        if quantity < 1:
-            return Response({"error": "Quantity must be at least 1"}, status=status.HTTP_400_BAD_REQUEST)
-            
-        existing_item = CartItem.objects.filter(
+    if existing_item:
+        existing_item.quantity += quantity
+        existing_item.save()
+        action = "Quantity updated"
+    else:
+        CartItem.objects.create(
             cart=cart,
             product=product,
-            selected_color=data.get('color', ''),
-            selected_size=data.get('size', '')
-        ).first()
-        
-        if existing_item:
-            existing_item.quantity += quantity
-            existing_item.save()
-            action = "Quantity updated"
-        else:
-            CartItem.objects.create(
-                cart=cart,
-                product=product,
-                quantity=quantity,
-                selected_color=data.get('color', ''),
-                selected_size=data.get('size', '')
-            )
-            action = "Item added"
+            quantity=quantity,
+            selected_color=request.data.get('color', ''),
+            selected_size=request.data.get('size', '')
+        )
+        action = "Item added"
 
-        return Response({
-            "message": f"{action} successfully",
-            "cart_id": cart.cart_id
-        }, status=status.HTTP_201_CREATED)
-        
-    except Exception as e: 
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({
+        "message": f"{action} successfully",
+        "cart_id": cart.cart_id,
+        "buyer_id": buyer.buyer_id
+    }, status=status.HTTP_201_CREATED)
+
 
 # Cart Items Update
 @api_view(['PUT'])
@@ -1020,28 +1027,51 @@ def cart_delete(request):
 @permission_classes([IsAuthenticated])
 def create_order(request):
     try:
-        buyer = Buyer.objects.get(user=request.user)
+        get_buyer_id = Buyer.objects.get(user=request.data['buyer_id'])
     except Buyer.DoesNotExist:
-        return Response({"error": "Buyer not exist or invalid buyer"}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"error": "Buyer not exist or invalid buyer id"}, status=status.HTTP_403_FORBIDDEN)
     
     data = request.data
     
-    required_fields = ['payment_method', 'transaction_id', 'items']
+    required_fields = ['payment_method', 'transaction_id', 'delivery_address', 'delivery_contact']
     if not all(field in data for field in required_fields):
         return Response({"error": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
     
-    if not isinstance(data['items'], list) or len(data['items']) == 0:
-        return Response({"error": "Please Enter item to place order"}, status=status.HTTP_400_BAD_REQUEST)
-    
+    if len(data['delivery_address']) <= 20:
+        return Response({"error": "Please enter your full delivery address including house/flat no., Street name, Area, landmark, Pincode, City and State"}, 
+                       status=status.HTTP_400_BAD_REQUEST)
+
+    if len(data['delivery_contact']) < 10:
+        return Response({"error": "Please enter a valid 10-digit mobile number"}, status=status.HTTP_400_BAD_REQUEST)
+                       
+
     try:
         with transaction.atomic():
+            try:
+                cart = Cart.objects.get(buyer=get_buyer_id)
+                cart_items = CartItem.objects.filter(cart=cart).select_related('product')
+            except Cart.DoesNotExist:
+                return Response({"error": "No cart found for this buyer"}, status=status.HTTP_400_BAD_REQUEST)
             
+            if not cart_items.exists():
+                return Response({"error": "Your cart is empty. Add products to cart before placing order"}, status=status.HTTP_400_BAD_REQUEST)
+                              
+            
+            # Check all products are available
+            for item in cart_items:
+                if not item.product.is_active or not item.product.in_stock:
+                    return Response({"error": f"Product {item.product.name} is not available"}, status=status.HTTP_400_BAD_REQUEST)
+                                  
+                if item.quantity > item.product.quantity:
+                    return Response({"error": f"Not enough stock for product {item.product.name}"}, status=status.HTTP_400_BAD_REQUEST)
+                                  
             # cod status
             payment_status = 'COD' if data['payment_method'].upper() == 'COD' else 'COMPLETED'
             order_status = 'COD' if data['payment_method'].upper() == 'COD' else 'PENDING'
 
+            # Create payment
             payment = Payment.objects.create(
-                buyer=buyer,
+                buyer=get_buyer_id,
                 amount=0,
                 payment_method=data['payment_method'],
                 transaction_id=data['transaction_id'],
@@ -1050,40 +1080,20 @@ def create_order(request):
             
             # Create order
             order = Order.objects.create(
-                buyer=buyer,
+                buyer=get_buyer_id,
                 payment=payment,
                 order_number=generate_order_id(),
-                status = order_status,
-                total=0 
+                status=order_status,
+                total=0
             )
             
             total_amount = 0
             order_items = []
             
-            for item in data['items']:
-                if 'product_id' not in item or 'quantity' not in item:
-                    return Response({"Each item must have product_id and quantity"}, status=status.HTTP_400_BAD_REQUEST)
-                
-                try:
-                    product = Product.objects.get(pk=item['product_id'], is_active=True, in_stock=True)
-                except Product.DoesNotExist:
-                    return Response({f"Product {item['product_id']} not available"}, status=status.HTTP_404_NOT_FOUND)
-                
-                quantity = int(item['quantity'])
-                if quantity < 1:
-                    return Response({"Quantity must be at least 1"}, status=status.HTTP_400_BAD_REQUEST)
-                if quantity > product.quantity:
-                    return Response({f"Not enough stock for product {product.name}"}, status=status.HTTP_404_NOT_FOUND)
-                
-                delivery_address = item.get('delivery_address')
-                delivery_contact = item.get('delivery_contact')
-
-                if not delivery_address or len(delivery_address) <= 20:
-                    return Response({"error": "Please enter your full delivery address including house/flat no., Street name, Area, landmark, Pincode, City and Stat"}, status=status.HTTP_400_BAD_REQUEST)
-
-                if not delivery_contact or len(delivery_contact) < 10:
-                    return Response({"error": "Please enter a valid 10-digit mobile number"}, status=status.HTTP_400_BAD_REQUEST)
-
+            # Process each cart item
+            for cart_item in cart_items:
+                product = cart_item.product
+                quantity = cart_item.quantity
                 price = product.sale_price if product.sale_price else product.price
                 item_total = price * quantity
 
@@ -1093,10 +1103,10 @@ def create_order(request):
                     product=product,
                     quantity=quantity,
                     price=price,
-                    color=item.get('color', ''),
-                    size=item.get('size', ''),
-                    delivery_contact = item.get('delivery_contact'),
-                    delivery_address = item.get('delivery_address')              
+                    color=cart_item.selected_color,
+                    size=cart_item.selected_size,
+                    delivery_contact=data['delivery_contact'],
+                    delivery_address=data['delivery_address']              
                 )
 
                 # Update product quantity
@@ -1111,27 +1121,26 @@ def create_order(request):
                     "quantity": quantity,
                     "price": str(price),
                     "item_total": str(item_total),
-                    "delivery_address":order_item.delivery_address,
-                    "delivery_contact":order_item.delivery_contact,
                 })
             
             # Update payment and order with total amount
-            payment.amount = total_amount
+            payment.amount = Decimal(str(total_amount))
             payment.save()
             
-            order.total = total_amount
+            order.total = Decimal(str(total_amount))
             order.save()
             
-            #clear Itesm from cart after order placed
-            cart = Cart.objects.filter(buyer=buyer)
-            cart_items_delete = CartItem.objects.filter(cart = cart)
-            cart_items_delete.delete()
+            # Clear the cart after successful order placement
+            cart_items.delete()
+            cart.delete()
 
             return Response({
                 "message": "Your Order has been Placed successfully",
                 "order_number": order.order_number,
                 "status": order.status,
                 "total": str(total_amount),
+                "delivery_address": data['delivery_address'],
+                "delivery_contact": data['delivery_contact'],
                 "items": order_items
             }, status=status.HTTP_201_CREATED)
         
@@ -1155,7 +1164,7 @@ def order_list(request):
         orders = orders.filter(status=status_filter)
 
     if not orders.exists():
-        return Response({"message": "No orders found for this buyer or filter"}, status=200)
+        return Response({"message": "No orders found for this buyer or filter"}, status=status.HTTP_200_OK)
 
     serializer = OrderSerializer(orders, many=True)
     return Response({"order data": serializer.data}, status=status.HTTP_200_OK)
@@ -1193,7 +1202,7 @@ def update_order_status(request):
         order = Order.objects.get(order_number=order_number)
         
         # Ensure the seller is part of the order
-        if not order.items.filter(product__seller=seller).exists():
+        if not OrderItem.objects.filter(order=order, product__seller=seller).exists():
             return Response({"error": "You can only update orders of your products"}, status=status.HTTP_403_FORBIDDEN)
 
     except Seller.DoesNotExist:
@@ -1392,3 +1401,106 @@ def wishlist_remove(request):
     
     except Wishlist.DoesNotExist:
         return Response({'error': 'Wishlist item not found'},status= status.HTTP_404_NOT_FOUND)
+
+# =======================================================================================================================================
+
+# cancel order and payment refund process
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def cancel_order_and_refund(request):
+    try:
+        get_buyer = request.data.get('buyer_id')
+    except Buyer.DoesNotExist:
+        return Response({"error": "Buyer Not Exist or invalid buyer"}, status=status.HTTP_403_FORBIDDEN)
+
+    order_number = request.data.get('order_number')
+    cancel_reason = request.data.get('cancel_reason', '')
+
+    if not order_number or not cancel_reason:
+        return Response({"error": "order_number and cancel_reason required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        order = Order.objects.get(order_number=order_number, buyer=get_buyer)
+    except Order.DoesNotExist:
+        return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    if order.status not in ['PENDING', 'COD','SHIPPED' ,'DELIVERED', 'PROCESSING']:
+        return Response({"error": f"Cannot cancel order with status {order.status}"}, status=status.HTTP_400_BAD_REQUEST)
+
+    order.status = 'CANCELLED'
+
+    if order.status == 'DELIVERED' or (order.payment and order.payment.payment_method and order.payment.payment_method.upper() != 'COD'): # cgeck if ordder.payment is not none before using payment_method
+        order.refund_status = 'REQUESTED'
+
+    order.refund_reason = cancel_reason
+    order.refund_date = datetime.now()
+    order.save()
+
+    # Restore product stock
+    for item in OrderItem.objects.filter(order=order):
+        product = item.product
+        product.quantity += item.quantity
+        product.in_stock = True
+        product.save()
+
+    return Response({
+        "message": "Order cancelled successfully",
+        "order_number": order.order_number,
+        "status": order.status,
+        "refund_status": order.refund_status,
+        "refund_reason": order.refund_reason
+    }, status=status.HTTP_200_OK)
+
+
+# Update refund Status By Seller
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated]) 
+def update_refund_status(request):
+    
+    try:
+        seller = Seller.objects.get(user=request.user)
+    except Seller.DoesNotExist:
+        return Response({"error": "Only sellers can update refund status"}, status=status.HTTP_403_FORBIDDEN)
+
+    order_number = request.data.get('order_number')
+    refund_status = request.data.get('refund_status')
+    refund_response = request.data.get('refund_response', '')
+    
+    if not order_number or not refund_status:
+        return Response({"error": "order_number and refund_status are required"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Validate refund status values
+    # valid_statuses = ['REQUESTED', 'APPROVED', 'REJECTED', 'PROCESSED']
+    valid_status = Order.REFUND_STATUS_CHOICES
+
+    if refund_status not in valid_status:
+        return Response({"error": "Invalid status"},status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        order = Order.objects.get(order_number=order_number)
+    except Order.DoesNotExist:
+        return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    if order.status != 'CANCELLED':
+        return Response({"error": "Only cancelled orders can have refund status updated"},status=status.HTTP_400_BAD_REQUEST)
+
+    order.refund_status = refund_status
+    order.refund_response = refund_response
+    
+    if refund_status == 'PROCESSED':
+        order.refund_date = datetime.now()
+        if order.payment:
+            order.payment.refund_amount = order.total
+            order.payment.refund_date = datetime.now()
+            order.payment.status = 'REFUNDED'
+            order.payment.save()
+    
+    order.save()
+    
+    return Response({
+        "message": "Refund status updated successfully",
+        "order_number": order.order_number,
+        "refund_status": order.refund_status,
+        "refund_response": order.refund_response,
+        "refund_date": order.refund_date
+    }, status=status.HTTP_200_OK)

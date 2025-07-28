@@ -125,20 +125,32 @@ class Order(models.Model):
         ('CANCELLED', 'Cancelled'),
         ('REFUNDED', 'Refunded'),
     ]
+
+    REFUND_STATUS_CHOICES = [
+    ('NONE', 'None'),
+    ('REQUESTED', 'Requested'),
+    ('APPROVED', 'Approved'),
+    ('REJECTED', 'Rejected'),
+    ('PROCESSED', 'Processed'),
+]
     
     order_id = models.AutoField(primary_key=True)
     buyer = models.ForeignKey(Buyer, on_delete=models.CASCADE)
     payment = models.ForeignKey('Payment', on_delete=models.SET_NULL, null=True)
     order_number = models.CharField(max_length=20, unique=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
-    notes =  models.CharField(max_length=50, blank=True)
+    notes =  models.CharField(max_length=150, blank=True)
     total = models.DecimalField(max_digits=10, decimal_places=2)
     order_date = models.DateTimeField(auto_now_add=True)
     dispatch_date = models.DateTimeField(null=True, blank=True)
     delivery_date = models.DateTimeField(null=True, blank=True)
     tracking_number = models.CharField(max_length=50, blank=True)
     shipping_company = models.CharField(max_length=50, blank=True)
-    
+    refund_status = models.CharField(max_length=20, choices=REFUND_STATUS_CHOICES, default='NONE')
+    refund_reason = models.TextField(blank=True, null=True)
+    refund_response = models.TextField(blank=True, null=True)
+    refund_date = models.DateTimeField(blank=True, null=True)
+
     def __str__(self):
         return f"Order {self.order_number}"
 
