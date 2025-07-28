@@ -92,6 +92,7 @@ urlpatterns = [
     path('cart_get/', cart_get),
     path('cart_create/', cart_create),
     path('cart_delete/', cart_delete),
+    path('cart_items_update/', cart_items_update),
 
     path('create_order/', create_order),
     path('order_list/', order_list),
