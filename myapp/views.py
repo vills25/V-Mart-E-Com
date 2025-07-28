@@ -390,6 +390,7 @@ def forgot_password(request):
         return Response({"error": "Enter email and new password please!!"}, status=status.HTTP_400_BAD_REQUEST)
     try:
         user = User.objects.get(email__iexact=email)
+        user.set_password(new_password)
         user.save()
         return Response({"message": "Password Update Success"}, status=status.HTTP_200_OK)
     except User.DoesNotExist:
