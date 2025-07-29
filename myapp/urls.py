@@ -68,7 +68,7 @@ urlpatterns = [
     path('forgot_password/', forgot_password),
   
     path('all_buyers_view_by_admin/', admin_all_buyers),
-    path('admin_all_sellers/', admin_all_sellers),
+    path('all_sellers_view_by_admin/', admin_all_sellers),
     path('buyer_profile_with_orders/', buyer_profile_with_orders),
     path('seller_profile_with_products_orders/', seller_profile_with_products_orders),
     

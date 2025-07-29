@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework import status
 from django.db import transaction
 from django.contrib.auth import authenticate
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from .models import *
 from .serializers import *
 from django.db.models import Q
@@ -362,6 +362,7 @@ def login(request):
                 return Response({"error": "User type not recognized"}, status=status.HTTP_400_BAD_REQUEST)
         
     return Response({
+        'refresh': str(refresh),
         'access': str(refresh.access_token),
         'user': user_data,
         'user_type': user_type
