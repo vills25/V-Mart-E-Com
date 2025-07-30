@@ -127,3 +127,8 @@ class WishlistSerializer(serializers.ModelSerializer):
     class Meta:
         model = Wishlist
         fields = ['wishlist_id', 'buyer', 'product', 'added_at', 'added_by']
+
+class Forgot_password_otp_serializer(serializers.ModelSerializer):
+    class Meeta:
+        model = Forgot_password_otp
+        fields = '__all__'        

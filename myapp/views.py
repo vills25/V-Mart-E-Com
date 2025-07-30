@@ -11,6 +11,9 @@ from .serializers import *
 from django.db.models import Q
 import random
 from decimal import Decimal
+from django.core.mail import send_mail
+from django.utils import timezone
+from datetime import timedelta
 
 def generate_order_id():
     order_name = "#ord"
@@ -382,21 +385,68 @@ def logout_view(request):
         return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
     
 #Forgot password
+# @api_view(['POST'])
+# def forgot_password(request):
+#     email = request.data.get("email")
+#     new_password = request.data.get("new_password")
+ 
+#     if not email or not new_password:
+#         return Response({"error": "Enter email and new password please!!"}, status=status.HTTP_400_BAD_REQUEST)
+#     try:
+#         user = User.objects.get(email__iexact=email)
+#         user.set_password(new_password)
+#         user.save()
+#         return Response({"message": "Password Update Success"}, status=status.HTTP_200_OK)
+#     except User.DoesNotExist:
+#         return Response({"error": "User not exist"}, status= status.HTTP_404_NOT_FOUND)
+
+def generate_otp():
+    return str(random.randint(100000, 999999))
+
+def send_otp_email(user_email, otp):
+    subject = "V-MART OTP for reset password"
+    message = f"Hello from V-Mart.\n This is OTP is for reset your password: {otp}"
+    from_email = 'vishalsohaliya25@gmail.com'
+    recipient_list = [user_email]
+    send_mail(subject, message, from_email, recipient_list)
+
 @api_view(['POST'])
-def forgot_password(request):
+def forgot_password_sent_email(request):
     email = request.data.get("email")
-    new_password = request.data.get("new_password")
-    
-    if not email or not new_password:
-        return Response({"error": "Enter email and new password please!!"}, status=status.HTTP_400_BAD_REQUEST)
     try:
         user = User.objects.get(email__iexact=email)
-        user.set_password(new_password)
-        user.save()
-        return Response({"message": "Password Update Success"}, status=status.HTTP_200_OK)
+        otp = generate_otp()
+        Forgot_password_otp.objects.create(user=user, otp=otp)
+        send_otp_email(email, otp)
+        return Response({"message": "OTP sent to your email. Please check your Email box!"}, status=status.HTTP_200_OK)
     except User.DoesNotExist:
         return Response({"error": "User not exist"}, status= status.HTTP_404_NOT_FOUND)
 
+@api_view(['POST'])
+def reset_password(request):
+    email = request.data.get("email")
+    otp = request.data.get("otp")
+    new_password = request.data.get("new_password")
+
+    try:
+        user = User.objects.get(email=email)
+        otp_ = Forgot_password_otp.objects.filter(user=user, otp=otp, is_used=False).last()
+
+        if not otp_:
+            return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if timezone.now() - otp_.created_at > timedelta(minutes=10):
+            return Response({"OTP expired"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save()
+
+        otp_.is_used = True
+        otp_.save()
+        return Response({"Password reset successful"}, status=status.HTTP_200_OK)
+    except User.DoesNotExist:
+        return Response({"Invalid email"}, status= status.HTTP_404_NOT_FOUND)
+ 
 # ================================================================================================
 
 # view all buyers admin only

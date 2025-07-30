@@ -59,13 +59,16 @@ from .views import *
 urlpatterns = [
     path('seller_register/',register_seller),
     path('update_seller/', update_seller),
+    path('seller_delete/', seller_delete),
+
     path('buyer_register/',register_buyer),
     path('update_buyer/', update_buyer),
-    
+    path('buyer_delete/', buyer_delete),
 
     path('login/', login),
     path('logout_view/', logout_view),
-    path('forgot_password/', forgot_password),
+    path('forgot_password_sent_email/', forgot_password_sent_email),
+    path('reset_password/', reset_password),
   
     path('all_buyers_view_by_admin/', admin_all_buyers),
     path('all_sellers_view_by_admin/', admin_all_sellers),
@@ -95,7 +98,7 @@ urlpatterns = [
     path('cart_items_update/', cart_items_update),
 
     path('create_order/', create_order),
-    path('order_list/', order_list),
+    path('order_list/', order_list), # Buyer can view his order details
     path('seller_order_list/', seller_order_list),
     path('update_order_status/', update_order_status),
     path('cancel_order_and_refund/', cancel_order_and_refund),
