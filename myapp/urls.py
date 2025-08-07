@@ -1,60 +1,32 @@
-# from django.urls import path
-# from .views import *
-
-# urlpatterns = [
-#     path('register/',register_buyer ),
-#     path('login/', login_buyer),
-#     path('logout/', logout_view),
-#     path('forgotpassword/',forgot_password_view ),
-
-#     path('buyerprofileview/',show_buyer_profile ),
-#     # path('buyerupdate/', buyer_update),
-#     path('buyerdelete/',buyer_delete ),
-#     path('get_all_buyer/', get_all_buyers),
-
-#     path('categorycreate/', category_create),
-#     path('categoryview/',category_view ),
-#     path('categoryupdate/',category_update ),
-#     path('categorydelete/',category_delete ),
-
-#     path('subcategorycreate/',subcategory_create ),
-#     path('subcategoryview/',subcategory_view ),
-#     path('subcategoryupdate/',subcategory_update ),
-#     path('subcategorydelete/', subcategory_delete),
-
-#     path('productcreate/',product_create),
-#     path('productget/', product_get),
-#     path('productupdate/',product_update ),
-#     path('productdelete/',product_delete ),
-
-#     # path('cartadd/',cart_create),
-#     # path('cartget/', cart_get),
-#     # path('cartupdate/', cart_update_delete),
-#     path('cartdelete/', cart_delete),
-
-#     path('cartitemsget/', cart_items_get),
-#     path('cartitemscreate/', cart_items_create),
-#     path('cartitemsupdate/', cart_items_update),
-#     path('cartitemsdelete/', cart_items_delete),
-
-#     path('cancelorder/', cancel_order),
-#     # path('getallorders/', grt_all_orders_view),
-#     path('checkout/', checkout_order),
-    
-#     # path('searchbuyer/', search_buyer),
-#     # path('searchcategory/', search_category),
-#     # path('searchsubcategory/', search_subcategory),
-#     # path('searchproduct/', search_product),
-#     # path('searchcartitems/', search_cart_items),
-    
-#     path('wishlistview/', whishlist_get),
-#     path('wishlistadd/', whishlist_create),
-#     path('wishlistremove/', whishlist_remove)
-    
-# ]
 
 from django.urls import path
-from .views import *
+
+# Admin
+from myapp.views.admin.views import *
+
+# Authentication (Login, SMTP email, Forgot/Reset Password)
+from myapp.views.auth.authentication import *
+
+# Buyers
+from myapp.views.buyers.views import *
+
+# Seller
+from myapp.views.sellers.views import *
+
+# Cart & Wishlist
+from myapp.views.cart_wishlist.cart import *
+from myapp.views.cart_wishlist.wishlist import *
+
+# Orders
+from myapp.views.orders.views import *
+from myapp.views.orders.refunds import *
+
+# Products
+from myapp.views.products.categories import *
+from myapp.views.products.subcategories import *
+from myapp.views.products.reviews import *
+from myapp.views.products.views import *
+
 
 urlpatterns = [
     path('seller_register/',register_seller),
@@ -86,7 +58,6 @@ urlpatterns = [
     path('subcategory_delete/', subcategory_delete),
 
     path('product_search/', product_search),
-
     path('product_get/', product_get),
     path('product_create/', product_create),
     path('product_update/', product_update),
